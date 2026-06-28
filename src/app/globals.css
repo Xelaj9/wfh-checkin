@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Sarabun', 'Noto Sans Thai', system-ui, sans-serif;
+}
+
+html,
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* badge สถานะ — ใช้ซ้ำทั่วระบบ */
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+.badge-normal {
+  @apply bg-green-100 text-green-800;
+}
+.badge-pending {
+  @apply bg-amber-100 text-amber-800;
+}
+.badge-suspicious {
+  @apply bg-red-100 text-red-800;
+}

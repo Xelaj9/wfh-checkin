@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/presence", "schedule": "*/15 8-19 * * 1-5" },
+    { "path": "/api/cron/retention", "schedule": "0 3 * * *" }
+  ]
+}
