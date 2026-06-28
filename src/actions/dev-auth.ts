@@ -12,7 +12,9 @@ import { headers } from 'next/headers'
  * ใช้กับ seeded users (รหัสผ่าน Password123!) เท่านั้น
  */
 export async function devLoginAction(formData: FormData) {
-  if (process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN !== 'true' || process.env.NODE_ENV === 'production') {
+  // คุมด้วย flag เดียว — ตั้ง NEXT_PUBLIC_ENABLE_DEV_LOGIN=true เพื่อเปิด, ลบ/false เพื่อปิด
+  // (ไม่เช็ค NODE_ENV เพราะ Vercel ตั้งเป็น 'production' เสมอ ทำให้ dev login ใช้ไม่ได้)
+  if (process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN !== 'true') {
     redirect('/login?error=auth')
   }
 
