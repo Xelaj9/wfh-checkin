@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { timeInTz } from '@/lib/utils'
@@ -76,7 +77,9 @@ export default async function SuspiciousPage() {
             <div key={r.id} className="rounded-xl border bg-white p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{u?.full_name ?? u?.email}</p>
+                  <Link href={`/admin/attendance/${r.id}`} className="font-medium hover:underline">
+                    {u?.full_name ?? u?.email}
+                  </Link>
                   <p className="text-xs text-slate-400">
                     {r.work_date} · เข้า{' '}
                     {r.check_in_time ? timeInTz(DEFAULT_TZ, r.check_in_time) : '-'}

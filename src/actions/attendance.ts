@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
@@ -8,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getClientIp, writeAudit } from '@/lib/audit'
 import { checkGeofence } from '@/lib/location'
 import { computeRisk, riskToStatus, toLevel } from '@/lib/risk-scoring'
+import { isDeviceClaimInconsistent, osFromUA } from '@/lib/ua'
 import { workDateInTz } from '@/lib/utils'
 import { getSettings } from '@/lib/settings'
 
@@ -176,6 +178,24 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
   const now = new Date()
   const isLate = computeIsLate(now, tz, team?.work_start ?? '09:00', team?.late_grace_minutes ?? 15)
 
+  // IP ของ request (server-side — ปลอมจาก client ไม่ได้)
+  const ip = getClientIp()
+
+  // นับจำนวน IP ที่ไม่ซ้ำกันที่ใช้ login วันนี้ (สัญญาณ IP เปลี่ยนผิดปกติ)
+  const since = `${workDate}T00:00:00Z`
+  const { data: todayLogins } = await admin
+    .from('login_history')
+    .select('ip')
+    .eq('user_id', user.id)
+    .gte('created_at', since)
+  const distinctIps = new Set(
+    [...(todayLogins ?? []).map((l) => l.ip).filter(Boolean), ip].filter(Boolean) as string[]
+  )
+
+  // ตรวจการปลอม device: UA จริงจาก header (server) เทียบกับที่ client อ้าง
+  const headerUA = headers().get('user-agent')
+  const uaTampered = isDeviceClaimInconsistent(headerUA, data.device.os, data.device.browser)
+
   // risk
   const risk = computeRisk({
     outsideGeofence: withinGeofence === false,
@@ -183,11 +203,12 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
     lowAccuracyMeters: data.accuracy,
     newDevice: !device.approved,
     timezoneMismatch: tzMismatch,
+    ipChangesToday: distinctIps.size,
+    userAgentChanged: uaTampered,
   })
   const status = riskToStatus(risk.level)
 
   // เขียน attendance ผ่าน service role
-  const ip = getClientIp()
   const { error } = await admin
     .from('attendance_records')
     .upsert(
@@ -224,7 +245,17 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
     actorId: user.id,
     actorEmail: user.email,
     entityType: 'attendance',
-    metadata: { workDate, status, riskScore: risk.score, withinGeofence, newDevice: device.isNew },
+    metadata: {
+      workDate,
+      status,
+      riskScore: risk.score,
+      withinGeofence,
+      newDevice: device.isNew,
+      distinctIpsToday: distinctIps.size,
+      uaTampered,
+      claimedOs: data.device.os,
+      realOs: headerUA ? osFromUA(headerUA) : null,
+    },
   })
 
   revalidatePath('/app')

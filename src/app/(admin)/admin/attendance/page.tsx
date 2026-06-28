@@ -110,7 +110,15 @@ export default async function AttendancePage({
             )}
             {rows.map(({ employee, record }) => (
               <tr key={employee.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2 font-medium">{employee.full_name ?? employee.email}</td>
+                <td className="px-4 py-2 font-medium">
+                  {record ? (
+                    <Link href={`/admin/attendance/${record.id}`} className="text-slate-900 hover:underline">
+                      {employee.full_name ?? employee.email}
+                    </Link>
+                  ) : (
+                    employee.full_name ?? employee.email
+                  )}
+                </td>
                 <td className="px-4 py-2">
                   {record?.check_in_time ? timeInTz(DEFAULT_TZ, record.check_in_time) : '-'}
                   {record?.is_late && <span className="ml-1 text-xs text-amber-600">สาย</span>}
