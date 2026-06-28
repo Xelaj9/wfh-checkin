@@ -646,6 +646,19 @@ values
   ('cccccccc-cccc-cccc-cccc-cccccccccccc', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'emp1@example.com',       crypt('Password123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"พนักงาน หนึ่ง"}', now(), now()),
   ('dddddddd-dddd-dddd-dddd-dddddddddddd', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'emp2@example.com',       crypt('Password123!', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"พนักงาน สอง"}', now(), now());
 
+-- สำคัญ: เวลา insert เข้า auth.users เอง คอลัมน์ token ต้องเป็น '' (ไม่ใช่ NULL)
+-- ไม่งั้น GoTrue (auth ของ Supabase) จะ login ไม่ผ่าน
+update auth.users set
+  confirmation_token        = '',
+  recovery_token            = '',
+  email_change_token_new    = '',
+  email_change_token_current= '',
+  email_change              = '',
+  phone_change              = '',
+  phone_change_token        = '',
+  reauthentication_token    = ''
+where email like '%@example.com';
+
 -- ---- Work locations ตัวอย่าง (กรุงเทพฯ) ----
 insert into work_locations (user_id, label, latitude, longitude, radius_meters) values
   ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'บ้าน (สาทร)', 13.7211, 100.5300, 200),
