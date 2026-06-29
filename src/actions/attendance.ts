@@ -125,6 +125,13 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
   const tz = team?.timezone ?? DEFAULT_TZ
   const workDate = workDateInTz(tz)
 
+  // กะของพนักงาน (ถ้ากำหนด) — ใช้คำนวณ "มาสาย" แทนเวลาทีม
+  const { data: shift } = user.shift_id
+    ? await supabase.from('shifts').select('start_time, late_grace_minutes').eq('id', user.shift_id).maybeSingle()
+    : { data: null }
+  const startTime = shift?.start_time?.slice(0, 5) ?? team?.work_start ?? '09:00'
+  const graceMin = shift?.late_grace_minutes ?? team?.late_grace_minutes ?? 15
+
   // กัน duplicate check-in ในวันเดียว
   const { data: existing } = await admin
     .from('attendance_records')
@@ -176,7 +183,7 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
 
   // มาสาย?
   const now = new Date()
-  const isLate = computeIsLate(now, tz, team?.work_start ?? '09:00', team?.late_grace_minutes ?? 15)
+  const isLate = computeIsLate(now, tz, startTime, graceMin)
 
   // IP ของ request (server-side — ปลอมจาก client ไม่ได้)
   const ip = getClientIp()

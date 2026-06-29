@@ -33,6 +33,18 @@ export type AppUser = Timestamps & {
   avatar_url: string | null
   role: UserRole
   team_id: string | null
+  shift_id: string | null
+  is_active: boolean
+  created_by: string | null
+  deleted_at: string | null
+}
+
+export type Shift = Timestamps & {
+  id: string
+  name: string
+  start_time: string
+  end_time: string
+  late_grace_minutes: number
   is_active: boolean
   created_by: string | null
   deleted_at: string | null
@@ -209,6 +221,7 @@ export type Database = {
   public: {
     Tables: {
       teams: TableShape<Team>
+      shifts: TableShape<Shift>
       users: TableShape<AppUser>
       allowed_emails: TableShape<AllowedEmail>
       employee_profiles: TableShape<EmployeeProfile>

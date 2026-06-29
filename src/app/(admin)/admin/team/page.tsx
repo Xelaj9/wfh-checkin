@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { WhitelistManager } from '@/components/admin/whitelist-manager'
 import { WorkLocationForm } from '@/components/admin/work-location-form'
-import { TeamShiftForm } from '@/components/admin/team-shift-form'
+import { ShiftsManager } from '@/components/admin/shifts-manager'
+import { ShiftAssignTable } from '@/components/admin/shift-assign-table'
 
 export default async function TeamPage() {
   const me = await requireRole(['admin', 'super_admin'])
@@ -11,7 +12,7 @@ export default async function TeamPage() {
   const settings = await getSettings()
 
   // ทั้งหมดถูกจำกัดขอบเขตด้วย RLS (admin เห็นเฉพาะทีมตัวเอง)
-  const [{ data: entries }, { data: teams }, { data: employees }, { data: locations }] =
+  const [{ data: entries }, { data: teams }, { data: employees }, { data: locations }, { data: shifts }] =
     await Promise.all([
       supabase
         .from('allowed_emails')
@@ -19,15 +20,22 @@ export default async function TeamPage() {
         .is('deleted_at', null)
         .order('created_at', { ascending: false }),
       supabase.from('teams').select('id, name, work_start, work_end, late_grace_minutes').is('deleted_at', null),
-      supabase.from('users').select('id, full_name, email').eq('role', 'employee').eq('is_active', true),
+      supabase
+        .from('users')
+        .select('id, full_name, email, shift_id')
+        .eq('role', 'employee')
+        .eq('is_active', true)
+        .order('full_name'),
       supabase.from('work_locations').select('*, users(full_name, email)').eq('is_active', true),
+      supabase.from('shifts').select('*').is('deleted_at', null).order('start_time'),
     ])
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">ผู้ใช้ & พื้นที่ทำงาน</h1>
 
-      {me.role === 'super_admin' && <TeamShiftForm teams={teams ?? []} />}
+      <ShiftsManager shifts={shifts ?? []} />
+      <ShiftAssignTable employees={employees ?? []} shifts={shifts ?? []} />
 
       <WhitelistManager
         entries={entries ?? []}
