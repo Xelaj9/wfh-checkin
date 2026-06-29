@@ -5,9 +5,9 @@
 -- =============================================================================
 
 -- ---- Teams ----
-insert into teams (id, name, timezone, work_start, late_grace_minutes) values
-  ('11111111-1111-1111-1111-111111111111', 'ทีม Admin Support', 'Asia/Bangkok', '09:00', 15),
-  ('22222222-2222-2222-2222-222222222222', 'ทีม Operations',    'Asia/Bangkok', '08:30', 10);
+insert into teams (id, name, timezone, work_start, work_end, late_grace_minutes) values
+  ('11111111-1111-1111-1111-111111111111', 'ทีม Admin Support', 'Asia/Bangkok', '09:00', '18:00', 15),
+  ('22222222-2222-2222-2222-222222222222', 'ทีม Operations',    'Asia/Bangkok', '08:30', '17:30', 10);
 
 -- ---- App settings (ค่าเริ่มต้นบริษัท) ----
 insert into app_settings (key, value, description) values

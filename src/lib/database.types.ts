@@ -20,6 +20,7 @@ export type Team = Timestamps & {
   name: string
   timezone: string
   work_start: string
+  work_end: string
   late_grace_minutes: number
   created_by: string | null
   deleted_at: string | null

@@ -36,7 +36,8 @@ create table teams (
   name        text not null,
   timezone    text not null default 'Asia/Bangkok',
   -- ค่าเริ่มต้นของทีม (override ได้ที่ app_settings ระดับบริษัท)
-  work_start  time not null default '09:00',          -- ใช้คำนวณ "มาสาย"
+  work_start  time not null default '09:00',          -- เวลาเข้างานของกะ (ใช้คำนวณ "มาสาย")
+  work_end    time not null default '18:00',           -- เวลาเลิกงานของกะ
   late_grace_minutes int not null default 15,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),

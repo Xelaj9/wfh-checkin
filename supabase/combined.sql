@@ -1,6 +1,6 @@
 -- ============================================================
 -- WFH Check-in — COMBINED SQL (paste ลงใน Supabase SQL Editor)
--- รวม: 0001_schema + 0002_functions + 0003_rls + 0004_storage + seed
+-- รวม: 0001_schema + 0002_functions + 0003_rls + 0004_storage + 0005 + seed
 -- ============================================================
 
 -- =============================================================================
@@ -41,7 +41,8 @@ create table teams (
   name        text not null,
   timezone    text not null default 'Asia/Bangkok',
   -- ค่าเริ่มต้นของทีม (override ได้ที่ app_settings ระดับบริษัท)
-  work_start  time not null default '09:00',          -- ใช้คำนวณ "มาสาย"
+  work_start  time not null default '09:00',          -- เวลาเข้างานของกะ (ใช้คำนวณ "มาสาย")
+  work_end    time not null default '18:00',           -- เวลาเลิกงานของกะ
   late_grace_minutes int not null default 15,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
@@ -608,6 +609,10 @@ create policy "evidence_select_scoped"
 
 -- ไม่อนุญาต update/delete จาก client (ลบตาม retention policy ทำฝั่ง server)
 
+-- เพิ่มเวลาเลิกงานของกะ (ทีม) — ใช้คู่กับ work_start ที่มีอยู่
+-- idempotent: รันซ้ำได้
+alter table teams add column if not exists work_end time not null default '18:00';
+
 -- ===== SEED =====
 -- =============================================================================
 -- Seed data (ตัวอย่าง) — รันด้วย `supabase db reset`
@@ -616,9 +621,9 @@ create policy "evidence_select_scoped"
 -- =============================================================================
 
 -- ---- Teams ----
-insert into teams (id, name, timezone, work_start, late_grace_minutes) values
-  ('11111111-1111-1111-1111-111111111111', 'ทีม Admin Support', 'Asia/Bangkok', '09:00', 15),
-  ('22222222-2222-2222-2222-222222222222', 'ทีม Operations',    'Asia/Bangkok', '08:30', 10);
+insert into teams (id, name, timezone, work_start, work_end, late_grace_minutes) values
+  ('11111111-1111-1111-1111-111111111111', 'ทีม Admin Support', 'Asia/Bangkok', '09:00', '18:00', 15),
+  ('22222222-2222-2222-2222-222222222222', 'ทีม Operations',    'Asia/Bangkok', '08:30', '17:30', 10);
 
 -- ---- App settings (ค่าเริ่มต้นบริษัท) ----
 insert into app_settings (key, value, description) values

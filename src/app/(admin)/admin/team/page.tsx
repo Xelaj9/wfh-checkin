@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
 import { WhitelistManager } from '@/components/admin/whitelist-manager'
 import { WorkLocationForm } from '@/components/admin/work-location-form'
+import { TeamShiftForm } from '@/components/admin/team-shift-form'
 
 export default async function TeamPage() {
   const me = await requireRole(['admin', 'super_admin'])
@@ -17,7 +18,7 @@ export default async function TeamPage() {
         .select('id, email, role, full_name, used_at')
         .is('deleted_at', null)
         .order('created_at', { ascending: false }),
-      supabase.from('teams').select('id, name').is('deleted_at', null),
+      supabase.from('teams').select('id, name, work_start, work_end, late_grace_minutes').is('deleted_at', null),
       supabase.from('users').select('id, full_name, email').eq('role', 'employee').eq('is_active', true),
       supabase.from('work_locations').select('*, users(full_name, email)').eq('is_active', true),
     ])
@@ -25,6 +26,8 @@ export default async function TeamPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">ผู้ใช้ & พื้นที่ทำงาน</h1>
+
+      {me.role === 'super_admin' && <TeamShiftForm teams={teams ?? []} />}
 
       <WhitelistManager
         entries={entries ?? []}
