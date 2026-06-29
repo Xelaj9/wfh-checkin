@@ -107,6 +107,7 @@ export type AttendanceRecord = Timestamps & {
   id: string
   user_id: string
   team_id: string | null
+  shift_id: string | null
   work_date: string
   check_in_time: string | null
   check_in_lat: number | null

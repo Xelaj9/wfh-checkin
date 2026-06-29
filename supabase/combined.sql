@@ -1,6 +1,4 @@
 -- WFH Check-in — COMBINED SQL (paste ใน Supabase SQL Editor)
--- schema + functions + rls + storage + work_end + shifts + seed
-
 
 -- ===== migrations/0001_schema.sql =====
 -- =============================================================================
@@ -665,6 +663,12 @@ select * from (values
   ('กะดึก',   time '22:00', time '06:00', 15)
 ) as v(name, start_time, end_time, late_grace_minutes)
 where not exists (select 1 from shifts);
+
+-- ===== migrations/0007_attendance_shift.sql =====
+-- เก็บ "กะที่พนักงานเลือกตอนเช็คอิน" รายวัน (รองรับการวนกะ)
+-- idempotent
+alter table attendance_records add column if not exists shift_id uuid references shifts(id) on delete set null;
+create index if not exists idx_attendance_shift on attendance_records(shift_id);
 
 -- ===== SEED =====
 -- =============================================================================

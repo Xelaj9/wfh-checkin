@@ -33,6 +33,7 @@ const checkInSchema = z.object({
   device: deviceSchema,
   workPlan: z.string().max(2000).optional(),
   selfiePath: z.string().optional(),
+  shiftId: z.string().uuid().nullable().optional(), // กะที่พนักงานเลือกวันนี้
 })
 
 const checkOutSchema = z.object({
@@ -125,10 +126,19 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
   const tz = team?.timezone ?? DEFAULT_TZ
   const workDate = workDateInTz(tz)
 
-  // กะของพนักงาน (ถ้ากำหนด) — ใช้คำนวณ "มาสาย" แทนเวลาทีม
-  const { data: shift } = user.shift_id
-    ? await supabase.from('shifts').select('start_time, late_grace_minutes').eq('id', user.shift_id).maybeSingle()
+  // กะที่พนักงานเลือกตอนเช็คอินวันนี้ (รองรับวนกะ) — fallback ไปกะประจำตัว
+  const chosenShiftId = data.shiftId ?? user.shift_id ?? null
+  const { data: shift } = chosenShiftId
+    ? await supabase
+        .from('shifts')
+        .select('id, start_time, late_grace_minutes')
+        .eq('id', chosenShiftId)
+        .is('deleted_at', null)
+        .eq('is_active', true)
+        .maybeSingle()
     : { data: null }
+  // ใช้กะที่ valid เท่านั้น (ถ้ากะถูกลบ/ปิด → null)
+  const shiftId = shift?.id ?? null
   const startTime = shift?.start_time?.slice(0, 5) ?? team?.work_start ?? '09:00'
   const graceMin = shift?.late_grace_minutes ?? team?.late_grace_minutes ?? 15
 
@@ -223,6 +233,7 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
         id: existing?.id,
         user_id: user.id,
         team_id: user.team_id,
+        shift_id: shiftId,
         work_date: workDate,
         check_in_time: now.toISOString(),
         check_in_lat: data.lat,

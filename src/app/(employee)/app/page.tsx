@@ -24,10 +24,19 @@ export default async function EmployeeHome() {
 
   const { data: today } = await supabase
     .from('attendance_records')
-    .select('*')
+    .select('*, shifts(name, start_time, end_time)')
     .eq('user_id', user.id)
     .eq('work_date', workDate)
     .maybeSingle()
+  const todayShift = (today as { shifts?: { name?: string; start_time?: string; end_time?: string } } | null)?.shifts
+
+  // กะที่เปิดใช้งาน — ให้พนักงานเลือกตอนเช็คอิน (รองรับวนกะ)
+  const { data: shifts } = await supabase
+    .from('shifts')
+    .select('id, name, start_time, end_time')
+    .is('deleted_at', null)
+    .eq('is_active', true)
+    .order('start_time')
 
   // presence check ที่ยังค้างและไม่หมดเวลา
   const { data: pendingPresence } = await supabase
@@ -94,11 +103,25 @@ export default async function EmployeeHome() {
             <dt className="text-slate-400">เวลาทำงานรวม</dt>
             <dd className="font-medium">{formatMinutes(today?.worked_minutes ?? null)}</dd>
           </div>
+          {todayShift?.name && (
+            <div className="col-span-2">
+              <dt className="text-slate-400">กะวันนี้</dt>
+              <dd className="font-medium">
+                {todayShift.name} ({todayShift.start_time?.slice(0, 5)}–{todayShift.end_time?.slice(0, 5)})
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
 
       {/* ปุ่ม check-in / check-out + ฟอร์ม */}
-      <CheckInPanel state={state} selfieRequired={settings.selfie_required} userId={user.id} />
+      <CheckInPanel
+        state={state}
+        selfieRequired={settings.selfie_required}
+        userId={user.id}
+        shifts={shifts ?? []}
+        defaultShiftId={user.shift_id}
+      />
 
       {/* บันทึกงานระหว่างวัน (แสดงเมื่อเช็คอินแล้ว) */}
       {state !== 'not_checked_in' && <WorkLogSection logs={logs ?? []} />}

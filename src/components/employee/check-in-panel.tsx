@@ -7,6 +7,14 @@ import { SelfieCapture } from '@/components/employee/selfie-capture'
 
 type State = 'not_checked_in' | 'working' | 'checked_out'
 
+interface ShiftOption {
+  id: string
+  name: string
+  start_time: string
+  end_time: string
+}
+const hhmm = (t: string) => t?.slice(0, 5) ?? ''
+
 /** ขอพิกัดจาก browser (เก็บเฉพาะตอนกดเช็คอิน/เอาต์ — ไม่ track ตลอดเวลา) */
 function getPosition(): Promise<{ lat: number | null; lng: number | null; accuracy: number | null; denied: boolean }> {
   return new Promise((resolve) => {
@@ -38,10 +46,14 @@ export function CheckInPanel({
   state,
   selfieRequired = false,
   userId,
+  shifts = [],
+  defaultShiftId = null,
 }: {
   state: State
   selfieRequired?: boolean
   userId: string
+  shifts?: ShiftOption[]
+  defaultShiftId?: string | null
 }) {
   const [isPending, startTransition] = useTransition()
   const [result, setResult] = useState<ActionResult | null>(null)
@@ -51,10 +63,20 @@ export function CheckInPanel({
   const [issues, setIssues] = useState('')
   const [busy, setBusy] = useState(false)
   const [selfiePath, setSelfiePath] = useState<string | null>(null)
+  // กะที่เลือกวันนี้ — default = กะประจำตัว ไม่งั้นกะแรก
+  const [shiftId, setShiftId] = useState<string>(
+    defaultShiftId && shifts.some((s) => s.id === defaultShiftId)
+      ? defaultShiftId
+      : shifts[0]?.id ?? ''
+  )
 
   async function handleCheckIn() {
     if (selfieRequired && !selfiePath) {
       setResult({ ok: false, error: 'กรุณาถ่ายรูปยืนยันตัวตนก่อน' })
+      return
+    }
+    if (shifts.length > 0 && !shiftId) {
+      setResult({ ok: false, error: 'กรุณาเลือกกะที่ทำงานวันนี้' })
       return
     }
     setBusy(true)
@@ -69,6 +91,7 @@ export function CheckInPanel({
         device,
         workPlan,
         selfiePath: selfiePath ?? undefined,
+        shiftId: shiftId || null,
       })
       setResult(res)
       setBusy(false)
@@ -114,6 +137,23 @@ export function CheckInPanel({
             <div className="rounded-lg border p-3">
               <p className="mb-2 text-sm font-medium">ถ่ายรูปยืนยันตัวตน (บังคับ)</p>
               <SelfieCapture userId={userId} purpose="checkin" onCaptured={setSelfiePath} />
+            </div>
+          )}
+          {shifts.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium">กะที่ทำงานวันนี้</label>
+              <select
+                value={shiftId}
+                onChange={(e) => setShiftId(e.target.value)}
+                className="mt-1 w-full rounded-lg border p-3 text-sm"
+              >
+                {shifts.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({hhmm(s.start_time)}–{hhmm(s.end_time)})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-400">เลือกกะที่ตรงกับเวลาทำงานวันนี้ (ระบบคิดสายจากกะนี้)</p>
             </div>
           )}
           <label className="block text-sm font-medium">แผนงานวันนี้</label>

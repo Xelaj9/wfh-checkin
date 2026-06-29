@@ -24,10 +24,11 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
   // RLS จำกัดให้เห็นเฉพาะทีมตัวเอง — เห็น = มีสิทธิ์
   const { data: rec } = await supabase
     .from('attendance_records')
-    .select('*, users(full_name, email)')
+    .select('*, users(full_name, email), shifts(name, start_time, end_time)')
     .eq('id', params.id)
     .maybeSingle()
   if (!rec) notFound()
+  const shiftInfo = (rec as { shifts?: { name?: string; start_time?: string; end_time?: string } }).shifts
 
   const u = (rec as { users?: { full_name?: string; email?: string } }).users
   const factors = (Array.isArray(rec.risk_factors) ? rec.risk_factors : []) as Factor[]
@@ -104,6 +105,10 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
         {/* check-in */}
         <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
           <h2 className="mb-2 font-semibold">เช็คอิน</h2>
+          <Row
+            k="กะ"
+            v={shiftInfo?.name ? `${shiftInfo.name} (${shiftInfo.start_time?.slice(0, 5)}–${shiftInfo.end_time?.slice(0, 5)})` : 'ตามเวลาทีม'}
+          />
           <Row k="เวลา" v={rec.check_in_time ? timeInTz(DEFAULT_TZ, rec.check_in_time) : '-'} />
           <Row k="มาสาย" v={rec.is_late ? 'ใช่' : 'ไม่'} />
           <Row k="อยู่ในพื้นที่" v={rec.check_in_within_geofence == null ? '-' : rec.check_in_within_geofence ? 'ใช่' : 'ไม่ (นอกพื้นที่)'} danger={rec.check_in_within_geofence === false} />
