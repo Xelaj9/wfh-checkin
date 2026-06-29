@@ -66,7 +66,7 @@ export default async function EmployeeHome() {
       )}
 
       {/* สถานะวันนี้ */}
-      <section className="rounded-2xl border bg-slate-50 p-5">
+      <section className="rounded-2xl border bg-slate-50 dark:bg-slate-800/50 p-5">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">สถานะวันนี้</h2>
           {today && <StatusBadge status={today.status} />}

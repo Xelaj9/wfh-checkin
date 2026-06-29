@@ -53,7 +53,7 @@ export function WorkLocationForm({
   }
 
   return (
-    <div className="rounded-xl border bg-white p-5">
+    <div className="rounded-xl border bg-white dark:bg-slate-900 p-5">
       <h2 className="mb-3 font-semibold">กำหนดพื้นที่ทำงาน (Geofence)</h2>
       {msg && (
         <p className={`mb-2 rounded-lg p-2 text-sm ${msg.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
@@ -80,7 +80,7 @@ export function WorkLocationForm({
       <button
         onClick={submit}
         disabled={isPending || !userId || !label || !lat || !lng}
-        className="mt-3 rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="mt-3 rounded-lg bg-slate-900 dark:bg-brand-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
         {isPending ? 'กำลังบันทึก…' : 'บันทึกพื้นที่'}
       </button>

@@ -21,7 +21,7 @@ export default async function DevicesPage() {
       </p>
 
       {(!devices || devices.length === 0) && (
-        <p className="rounded-xl border border-dashed bg-white p-8 text-center text-sm text-slate-400">
+        <p className="rounded-xl border border-dashed bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-400">
           ไม่มีอุปกรณ์รออนุมัติ
         </p>
       )}
@@ -32,7 +32,7 @@ export default async function DevicesPage() {
           return (
             <div
               key={d.id}
-              className="flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-xl border bg-white dark:bg-slate-900 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="text-sm">
                 <p className="font-medium">{u?.full_name ?? u?.email}</p>

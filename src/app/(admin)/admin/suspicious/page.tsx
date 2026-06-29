@@ -65,7 +65,7 @@ export default async function SuspiciousPage() {
         </div>
       )}
       {(!records || records.length === 0) && (
-        <p className="rounded-xl border border-dashed bg-white p-8 text-center text-sm text-slate-400">
+        <p className="rounded-xl border border-dashed bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-400">
           ไม่มีรายการผิดปกติ 🎉
         </p>
       )}
@@ -74,7 +74,7 @@ export default async function SuspiciousPage() {
           const u = (r as { users?: { full_name?: string; email?: string } }).users
           const factors = Array.isArray(r.risk_factors) ? r.risk_factors : []
           return (
-            <div key={r.id} className="rounded-xl border bg-white p-4">
+            <div key={r.id} className="rounded-xl border bg-white dark:bg-slate-900 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <Link href={`/admin/attendance/${r.id}`} className="font-medium hover:underline">
@@ -116,11 +116,11 @@ export default async function SuspiciousPage() {
 
       <h2 className="pt-4 text-lg font-bold">ไม่ตอบ Presence Check (Missed)</h2>
       {(!missed || missed.length === 0) && (
-        <p className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-400">
+        <p className="rounded-xl border border-dashed bg-white dark:bg-slate-900 p-6 text-center text-sm text-slate-400">
           ไม่มีรายการ
         </p>
       )}
-      <div className="overflow-hidden rounded-xl border bg-white">
+      <div className="overflow-hidden rounded-xl border bg-white dark:bg-slate-900">
         {missed && missed.length > 0 && (
           <table className="w-full text-sm">
             <tbody className="divide-y">

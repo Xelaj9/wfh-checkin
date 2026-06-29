@@ -61,7 +61,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
       </Link>
 
       {/* หัว */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white dark:bg-slate-900 p-4">
         <div>
           <h1 className="text-lg font-bold">{u?.full_name ?? u?.email}</h1>
           <p className="text-sm text-slate-400">{rec.work_date}</p>
@@ -76,7 +76,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
       </div>
 
       {/* ทำไมถึงโดน flag */}
-      <section className="rounded-xl border bg-white p-4">
+      <section className="rounded-xl border bg-white dark:bg-slate-900 p-4">
         <h2 className="mb-3 font-semibold">เหตุผลที่ระบบ flag</h2>
         {factors.length === 0 ? (
           <p className="text-sm text-green-600">ไม่มีสัญญาณผิดปกติ (ปกติ)</p>
@@ -102,7 +102,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* check-in */}
-        <section className="rounded-xl border bg-white p-4 text-sm">
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
           <h2 className="mb-2 font-semibold">เช็คอิน</h2>
           <Row k="เวลา" v={rec.check_in_time ? timeInTz(DEFAULT_TZ, rec.check_in_time) : '-'} />
           <Row k="มาสาย" v={rec.is_late ? 'ใช่' : 'ไม่'} />
@@ -112,7 +112,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
         </section>
 
         {/* device */}
-        <section className="rounded-xl border bg-white p-4 text-sm">
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
           <h2 className="mb-2 font-semibold">อุปกรณ์</h2>
           {device ? (
             <>
@@ -129,7 +129,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
 
       {/* check-out + selfie */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <section className="rounded-xl border bg-white p-4 text-sm">
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
           <h2 className="mb-2 font-semibold">เช็คเอาต์ / งาน</h2>
           <Row k="เวลาเลิก" v={rec.check_out_time ? timeInTz(DEFAULT_TZ, rec.check_out_time) : '-'} />
           <Row k="เวลาทำงานรวม" v={formatMinutes(rec.worked_minutes ?? null)} />
@@ -137,7 +137,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
           {rec.work_plan && <p className="mt-2 text-slate-500">แผนงาน: {rec.work_plan}</p>}
         </section>
 
-        <section className="rounded-xl border bg-white p-4 text-sm">
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
           <h2 className="mb-2 font-semibold">รูปยืนยันตัวตน</h2>
           {selfieUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -151,7 +151,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
       </div>
 
       {/* presence checks */}
-      <section className="rounded-xl border bg-white p-4 text-sm">
+      <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
         <h2 className="mb-2 font-semibold">Presence check ระหว่างวัน</h2>
         {!presence || presence.length === 0 ? (
           <p className="text-slate-400">ไม่มีการสุ่มตรวจ</p>
@@ -170,7 +170,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
       </section>
 
       {/* audit trail */}
-      <section className="rounded-xl border bg-white p-4 text-sm">
+      <section className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm">
         <h2 className="mb-2 font-semibold">ประวัติการกระทำ (audit log)</h2>
         <ul className="space-y-1">
           {(audit ?? []).map((a, i) => (

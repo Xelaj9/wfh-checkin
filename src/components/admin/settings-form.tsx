@@ -18,7 +18,7 @@ export function SettingsForm({ initial }: { initial: AppSettings }) {
   }
 
   return (
-    <div className="space-y-4 rounded-xl border bg-white p-5">
+    <div className="space-y-4 rounded-xl border bg-white dark:bg-slate-900 p-5">
       {msg && (
         <p className={`rounded-lg p-2 text-sm ${msg.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
           {msg.text}
@@ -67,7 +67,7 @@ export function SettingsForm({ initial }: { initial: AppSettings }) {
       <button
         onClick={save}
         disabled={isPending}
-        className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="rounded-lg bg-slate-900 dark:bg-brand-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
         {isPending ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า'}
       </button>
@@ -78,7 +78,7 @@ export function SettingsForm({ initial }: { initial: AppSettings }) {
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-center justify-between gap-4">
-      <span className="text-sm text-slate-700">{label}</span>
+      <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-5 w-5" />
     </label>
   )
@@ -99,7 +99,7 @@ function NumberField({
 }) {
   return (
     <label className="flex items-center justify-between gap-4">
-      <span className="text-sm text-slate-700">{label}</span>
+      <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
       <input
         type="number"
         value={value}

@@ -72,7 +72,7 @@ export function LocationMap({ points }: { points: MapPoint[] }) {
 
   if (points.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-400">
+      <div className="rounded-xl border border-dashed bg-white dark:bg-slate-900 p-6 text-center text-sm text-slate-400">
         ไม่มีพิกัดให้แสดง
       </div>
     )

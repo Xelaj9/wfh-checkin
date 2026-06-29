@@ -35,7 +35,7 @@ export default async function TeamPage() {
 
       <WorkLocationForm employees={employees ?? []} defaultRadius={settings.default_geofence_radius} />
 
-      <div className="rounded-xl border bg-white p-5">
+      <div className="rounded-xl border bg-white dark:bg-slate-900 p-5">
         <h2 className="mb-3 font-semibold">พื้นที่ที่ตั้งไว้แล้ว</h2>
         <table className="w-full text-sm">
           <thead className="text-left text-slate-500">

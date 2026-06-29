@@ -56,7 +56,7 @@ export function WhitelistManager({
   }
 
   return (
-    <div className="rounded-xl border bg-white p-5">
+    <div className="rounded-xl border bg-white dark:bg-slate-900 p-5">
       <h2 className="mb-3 font-semibold">รายชื่ออีเมลที่อนุญาต (Whitelist)</h2>
 
       {msg && <p className="mb-2 rounded-lg bg-red-50 p-2 text-sm text-red-700">{msg}</p>}
@@ -100,7 +100,7 @@ export function WhitelistManager({
         <button
           onClick={add}
           disabled={isPending || !email}
-          className="rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-lg bg-slate-900 dark:bg-brand-600 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
         >
           เพิ่ม
         </button>

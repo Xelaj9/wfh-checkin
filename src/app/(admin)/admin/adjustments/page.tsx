@@ -27,7 +27,7 @@ export default async function AdminAdjustmentsPage() {
       <h1 className="text-xl font-bold">คำขอแก้ไขเวลา</h1>
 
       {withEvidence.length === 0 && (
-        <p className="rounded-xl border border-dashed bg-white p-8 text-center text-sm text-slate-400">
+        <p className="rounded-xl border border-dashed bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-400">
           ไม่มีคำขอ
         </p>
       )}
@@ -36,7 +36,7 @@ export default async function AdminAdjustmentsPage() {
         {withEvidence.map((r) => {
           const u = (r as { users?: { full_name?: string; email?: string } }).users
           return (
-            <div key={r.id} className="rounded-xl border bg-white p-4">
+            <div key={r.id} className="rounded-xl border bg-white dark:bg-slate-900 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="font-medium">{u?.full_name ?? u?.email}</p>

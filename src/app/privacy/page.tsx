@@ -12,9 +12,9 @@ export default function PrivacyPage() {
         ระบบนี้ออกแบบให้เก็บข้อมูล “เท่าที่จำเป็น” ต่อการยืนยันการเข้างานเท่านั้น
       </p>
 
-      <section className="mt-6 space-y-4 text-sm leading-6 text-slate-700">
+      <section className="mt-6 space-y-4 text-sm leading-6 text-slate-700 dark:text-slate-200">
         <div>
-          <h2 className="font-semibold text-slate-900">ข้อมูลที่เราเก็บ</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">ข้อมูลที่เราเก็บ</h2>
           <ul className="mt-1 list-disc pl-5">
             <li>เวลาเข้า–ออกงาน และบันทึกงาน (แผน/สรุป)</li>
             <li>ตำแหน่ง (พิกัด) เฉพาะ <b>ตอนเช็คอิน เช็คเอาต์ และการสุ่มยืนยันตัวตน</b> เท่านั้น</li>
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         </div>
 
         <div>
-          <h2 className="font-semibold text-slate-900">สิ่งที่เรา “ไม่” ทำ</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">สิ่งที่เรา “ไม่” ทำ</h2>
           <ul className="mt-1 list-disc pl-5">
             <li>ไม่ติดตามตำแหน่งตลอดเวลา</li>
             <li>ไม่แอบเปิดกล้องหรือไมโครโฟน</li>
@@ -35,14 +35,14 @@ export default function PrivacyPage() {
         </div>
 
         <div>
-          <h2 className="font-semibold text-slate-900">ระยะเวลาจัดเก็บ</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">ระยะเวลาจัดเก็บ</h2>
           <p>
             ข้อมูลถูกเก็บตามนโยบายบริษัท (เช่น 6 เดือน–1 ปี) และจะถูกลบหรือทำให้ไม่ระบุตัวตนเมื่อครบกำหนด
           </p>
         </div>
 
         <div>
-          <h2 className="font-semibold text-slate-900">สิทธิของคุณ</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">สิทธิของคุณ</h2>
           <p>คุณสามารถขอเข้าถึง แก้ไข หรือสอบถามเกี่ยวกับข้อมูลของคุณได้ที่ผู้ดูแลระบบ</p>
         </div>
       </section>

@@ -1,6 +1,8 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  // สลับธีมด้วยคลาส `dark` บน <html> (เก็บค่าใน localStorage)
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,16 +11,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          50: '#eef2ff',
+          100: '#e0e7ff',
+          500: '#6366f1',
+          600: '#4f46e5',
+          700: '#4338ca',
+        },
         // สถานะของ attendance — ใช้สีให้สอดคล้องทั้งระบบ (ข้อ 18)
         status: {
-          normal: '#16a34a', // เขียว
-          pending: '#d97706', // ส้ม
-          suspicious: '#dc2626', // แดง
-          review: '#ca8a04', // เหลือง
+          normal: '#16a34a',
+          pending: '#d97706',
+          suspicious: '#dc2626',
+          review: '#ca8a04',
         },
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
+      },
+      borderRadius: {
+        '2xl': '1rem',
       },
     },
   },

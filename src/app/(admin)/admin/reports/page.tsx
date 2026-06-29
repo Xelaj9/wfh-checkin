@@ -17,7 +17,7 @@ export default async function ReportsPage() {
       <form
         action="/api/reports/attendance"
         method="get"
-        className="flex flex-wrap items-end gap-3 rounded-xl border bg-white p-4"
+        className="flex flex-wrap items-end gap-3 rounded-xl border bg-white dark:bg-slate-900 p-4"
       >
         <label className="text-sm">
           <span className="mb-1 block text-slate-500">ตั้งแต่</span>
@@ -27,7 +27,7 @@ export default async function ReportsPage() {
           <span className="mb-1 block text-slate-500">ถึง</span>
           <input type="date" name="to" defaultValue={today} className="rounded-lg border px-3 py-1.5" required />
         </label>
-        <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+        <button className="rounded-lg bg-slate-900 dark:bg-brand-600 px-4 py-2 text-sm font-medium text-white">
           ดาวน์โหลด CSV
         </button>
       </form>

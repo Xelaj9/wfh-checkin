@@ -80,7 +80,7 @@ export default async function AttendancePage({
             key={f.key}
             href={`/admin/attendance?date=${date}&status=${f.key}`}
             className={`rounded-full px-3 py-1 text-sm ${
-              filter === f.key ? 'bg-slate-900 text-white' : 'bg-white border text-slate-600'
+              filter === f.key ? 'bg-slate-900 dark:bg-brand-600 text-white' : 'bg-white dark:bg-slate-900 border text-slate-600'
             }`}
           >
             {f.label}
@@ -88,9 +88,9 @@ export default async function AttendancePage({
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
+      <div className="overflow-x-auto rounded-xl border bg-white dark:bg-slate-900">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-left text-slate-500">
             <tr>
               <th className="px-4 py-2">พนักงาน</th>
               <th className="px-4 py-2">เข้างาน</th>
@@ -109,10 +109,10 @@ export default async function AttendancePage({
               </tr>
             )}
             {rows.map(({ employee, record }) => (
-              <tr key={employee.id} className="hover:bg-slate-50">
+              <tr key={employee.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                 <td className="px-4 py-2 font-medium">
                   {record ? (
-                    <Link href={`/admin/attendance/${record.id}`} className="text-slate-900 hover:underline">
+                    <Link href={`/admin/attendance/${record.id}`} className="text-slate-900 dark:text-slate-100 hover:underline">
                       {employee.full_name ?? employee.email}
                     </Link>
                   ) : (

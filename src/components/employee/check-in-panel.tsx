@@ -127,7 +127,7 @@ export function CheckInPanel({
           <button
             onClick={handleCheckIn}
             disabled={loading}
-            className="w-full rounded-xl bg-slate-900 py-4 text-base font-semibold text-white disabled:opacity-60"
+            className="w-full rounded-xl bg-slate-900 dark:bg-brand-600 py-4 text-base font-semibold text-white disabled:opacity-60"
           >
             {loading ? 'กำลังเช็คอิน…' : '🟢 เช็คอินเข้างาน'}
           </button>

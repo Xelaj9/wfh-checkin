@@ -5,7 +5,7 @@ import { addWorkLogAction, setWorkLogStatusAction } from '@/actions/worklog'
 import type { WorkLog, WorkLogStatus } from '@/lib/database.types'
 
 const STATUS_LABEL: Record<WorkLogStatus, { label: string; cls: string }> = {
-  planned: { label: 'วางแผน', cls: 'bg-slate-100 text-slate-700' },
+  planned: { label: 'วางแผน', cls: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200' },
   in_progress: { label: 'กำลังทำ', cls: 'bg-blue-100 text-blue-700' },
   done: { label: 'เสร็จ', cls: 'bg-green-100 text-green-700' },
   blocked: { label: 'ติดปัญหา', cls: 'bg-red-100 text-red-700' },
@@ -36,7 +36,7 @@ export function WorkLogSection({ logs }: { logs: WorkLog[] }) {
   }
 
   return (
-    <section className="rounded-2xl border bg-white p-4">
+    <section className="rounded-2xl border bg-white dark:bg-slate-900 p-4">
       <h3 className="mb-2 font-semibold">บันทึกงานระหว่างวัน</h3>
       <div className="flex gap-2">
         <input
@@ -49,7 +49,7 @@ export function WorkLogSection({ logs }: { logs: WorkLog[] }) {
         <button
           onClick={add}
           disabled={isPending}
-          className="rounded-lg bg-slate-900 px-4 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-lg bg-slate-900 dark:bg-brand-600 px-4 text-sm font-medium text-white disabled:opacity-60"
         >
           เพิ่ม
         </button>

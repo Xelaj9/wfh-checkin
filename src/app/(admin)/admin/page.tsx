@@ -6,7 +6,7 @@ const DEFAULT_TZ = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE ?? 'Asia/Bangkok'
 
 function StatCard({ label, value, tone }: { label: string; value: number; tone?: string }) {
   return (
-    <div className="rounded-xl border bg-white p-4">
+    <div className="rounded-xl border bg-white dark:bg-slate-900 p-4">
       <p className="text-sm text-slate-500">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${tone ?? ''}`}>{value}</p>
     </div>
@@ -71,8 +71,8 @@ export default async function AdminDashboard() {
         </div>
       )}
 
-      <div className="rounded-xl border bg-white p-4 text-sm text-slate-500">
-        ไปที่เมนู <a href="/admin/attendance" className="font-medium text-slate-900 underline">การเข้างาน</a>{' '}
+      <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm text-slate-500">
+        ไปที่เมนู <a href="/admin/attendance" className="font-medium text-slate-900 dark:text-slate-100 underline">การเข้างาน</a>{' '}
         เพื่อดูตารางรายวันแบบเต็มพร้อม filter (มาสาย / ยังไม่เข้างาน / ผิดปกติ / ตามพนักงาน)
       </div>
     </div>
