@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { upsertWorkLocationAction } from '@/actions/manage'
+import { resolveLocationLinkAction } from '@/actions/geo'
 
 interface Employee {
   id: string
@@ -23,6 +24,8 @@ export function WorkLocationForm({
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [radius, setRadius] = useState(String(defaultRadius))
+  const [link, setLink] = useState('')
+  const [resolving, setResolving] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   // ช่วยกรอกพิกัดปัจจุบันจาก browser (สะดวกตอนตั้งค่าหน้างาน)
@@ -30,6 +33,24 @@ export function WorkLocationForm({
     navigator.geolocation?.getCurrentPosition((p) => {
       setLat(String(p.coords.latitude))
       setLng(String(p.coords.longitude))
+    })
+  }
+
+  // ดึงพิกัดจากลิงก์ Google Maps ที่พนักงานส่งมา
+  function resolveLink() {
+    if (!link.trim()) return
+    setResolving(true)
+    setMsg(null)
+    startTransition(async () => {
+      const res = await resolveLocationLinkAction({ link })
+      if (res.ok) {
+        setLat(String(res.lat))
+        setLng(String(res.lng))
+        setMsg({ ok: true, text: `ดึงพิกัดสำเร็จ: ${res.lat}, ${res.lng}` })
+      } else {
+        setMsg({ ok: false, text: res.error })
+      }
+      setResolving(false)
     })
   }
 
@@ -48,6 +69,7 @@ export function WorkLocationForm({
         setLabel('')
         setLat('')
         setLng('')
+        setLink('')
       } else setMsg({ ok: false, text: res.error })
     })
   }
@@ -56,10 +78,42 @@ export function WorkLocationForm({
     <div className="rounded-xl border bg-white dark:bg-slate-900 p-5">
       <h2 className="mb-3 font-semibold">กำหนดพื้นที่ทำงาน (Geofence)</h2>
       {msg && (
-        <p className={`mb-2 rounded-lg p-2 text-sm ${msg.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+        <p
+          className={`mb-3 rounded-lg p-2 text-sm ${
+            msg.ok
+              ? 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300'
+              : 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300'
+          }`}
+        >
           {msg.text}
         </p>
       )}
+
+      {/* วางลิงก์ตำแหน่งจากพนักงาน → ดึงพิกัดอัตโนมัติ */}
+      <div className="mb-3 rounded-lg surface-muted p-3">
+        <label className="mb-1 block text-sm font-medium">วางลิงก์ตำแหน่ง (Google Maps)</label>
+        <div className="flex gap-2">
+          <input
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="เช่น https://maps.app.goo.gl/… หรือ 13.72, 100.53"
+            className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), resolveLink())}
+          />
+          <button
+            type="button"
+            onClick={resolveLink}
+            disabled={resolving || !link.trim()}
+            className="btn-primary whitespace-nowrap py-1.5"
+          >
+            {resolving ? 'กำลังดึง…' : 'ดึงพิกัด'}
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-muted">
+          ให้พนักงานกดแชร์ตำแหน่งใน Google Maps แล้วส่งลิงก์มา — วางที่นี่ ระบบเติม lat/lng ให้เอง
+        </p>
+      </div>
+
       <div className="grid gap-2 sm:grid-cols-2">
         <select value={userId} onChange={(e) => setUserId(e.target.value)} className="rounded-lg border px-3 py-1.5 text-sm">
           <option value="">— เลือกพนักงาน —</option>
@@ -73,7 +127,7 @@ export function WorkLocationForm({
         <input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="latitude" className="rounded-lg border px-3 py-1.5 text-sm" />
         <input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="longitude" className="rounded-lg border px-3 py-1.5 text-sm" />
         <input value={radius} onChange={(e) => setRadius(e.target.value)} placeholder="รัศมี (เมตร)" type="number" className="rounded-lg border px-3 py-1.5 text-sm" />
-        <button type="button" onClick={useMyLocation} className="rounded-lg border px-3 py-1.5 text-sm text-slate-600">
+        <button type="button" onClick={useMyLocation} className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 dark:text-slate-300">
           ใช้ตำแหน่งปัจจุบัน
         </button>
       </div>
