@@ -36,11 +36,43 @@ export async function GET(request: Request) {
   const ua = headers().get('user-agent')
   const ip = getClientIp()
 
-  const { data: profile } = await admin
-    .from('users')
-    .select('id, role, is_active')
-    .eq('id', user.id)
-    .maybeSingle()
+  let profile = (
+    await admin.from('users').select('id, role, is_active').eq('id', user.id).maybeSingle()
+  ).data
+
+  // Self-heal: ถ้ายังไม่มี profile แต่อีเมลอยู่ใน whitelist ให้สร้างให้เลย
+  // (กันเคสที่ user เคย login ก่อนถูกเพิ่ม whitelist → trigger ไม่ fire ซ้ำ)
+  if (!profile && user.email) {
+    const { data: wl } = await admin
+      .from('allowed_emails')
+      .select('role, team_id, full_name, created_by')
+      .ilike('email', user.email)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    if (wl) {
+      const meta = user.user_metadata ?? {}
+      await admin.from('users').upsert(
+        {
+          id: user.id,
+          email: user.email,
+          full_name: (meta.full_name as string) ?? (meta.name as string) ?? wl.full_name,
+          avatar_url: (meta.avatar_url as string) ?? (meta.picture as string) ?? null,
+          role: wl.role,
+          team_id: wl.team_id,
+          created_by: wl.created_by,
+        } as never,
+        { onConflict: 'id' }
+      )
+      await admin.from('employee_profiles').upsert(
+        { user_id: user.id, created_by: wl.created_by } as never,
+        { onConflict: 'user_id' }
+      )
+      await admin.from('allowed_emails').update({ used_at: new Date().toISOString() } as never).ilike('email', user.email)
+
+      profile = { id: user.id, role: wl.role, is_active: true }
+    }
+  }
 
   // ไม่อยู่ใน whitelist หรือถูกปิดใช้งาน
   if (!profile || !profile.is_active) {
