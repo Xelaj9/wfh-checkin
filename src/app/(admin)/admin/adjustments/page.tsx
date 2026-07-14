@@ -10,7 +10,7 @@ export default async function AdminAdjustmentsPage() {
   // RLS จำกัดขอบเขตทีมให้แล้ว
   const { data: requests } = await supabase
     .from('adjustment_requests')
-    .select('*, users(full_name, email)')
+    .select('*, users!adjustment_requests_user_id_fkey(full_name, email)')
     .order('created_at', { ascending: false })
     .limit(50)
 

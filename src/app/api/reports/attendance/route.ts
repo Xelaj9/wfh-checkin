@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const supabase = createClient()
   const { data: records } = await supabase
     .from('attendance_records')
-    .select('*, users(full_name, email)')
+    .select('*, users!attendance_records_user_id_fkey(full_name, email)')
     .gte('work_date', from)
     .lte('work_date', to)
     .order('work_date', { ascending: false })

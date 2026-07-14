@@ -27,7 +27,7 @@ export default async function TeamPage() {
         .in('role', ['employee', 'admin'])
         .eq('is_active', true)
         .order('full_name'),
-      supabase.from('work_locations').select('*, users(full_name, email)').eq('is_active', true),
+      supabase.from('work_locations').select('*, users!work_locations_user_id_fkey(full_name, email)').eq('is_active', true),
       supabase.from('shifts').select('*').is('deleted_at', null).order('start_time'),
     ])
 

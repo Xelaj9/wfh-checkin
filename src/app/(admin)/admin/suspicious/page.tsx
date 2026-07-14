@@ -15,7 +15,7 @@ export default async function SuspiciousPage() {
 
   const { data: records } = await supabase
     .from('attendance_records')
-    .select('*, users(full_name, email)')
+    .select('*, users!attendance_records_user_id_fkey(full_name, email)')
     .in('status', ['suspicious', 'pending_review'])
     .order('work_date', { ascending: false })
     .limit(100)
@@ -23,7 +23,7 @@ export default async function SuspiciousPage() {
   // รายการที่ไม่ตอบ presence check (missed)
   const { data: missed } = await supabase
     .from('presence_checks')
-    .select('id, scheduled_at, users(full_name, email)')
+    .select('id, scheduled_at, users!presence_checks_user_id_fkey(full_name, email)')
     .eq('status', 'missed')
     .order('scheduled_at', { ascending: false })
     .limit(50)

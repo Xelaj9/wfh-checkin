@@ -24,7 +24,7 @@ export default async function AttendanceDetailPage({ params }: { params: { id: s
   // RLS จำกัดให้เห็นเฉพาะทีมตัวเอง — เห็น = มีสิทธิ์
   const { data: rec } = await supabase
     .from('attendance_records')
-    .select('*, users(full_name, email), shifts(name, start_time, end_time)')
+    .select('*, users!attendance_records_user_id_fkey(full_name, email), shifts(name, start_time, end_time)')
     .eq('id', params.id)
     .maybeSingle()
   if (!rec) notFound()

@@ -9,7 +9,7 @@ export default async function DevicesPage() {
 
   const { data: devices } = await supabase
     .from('registered_devices')
-    .select('*, users(full_name, email)')
+    .select('*, users!registered_devices_user_id_fkey(full_name, email)')
     .eq('status', 'pending_review')
     .order('created_at', { ascending: false })
 
