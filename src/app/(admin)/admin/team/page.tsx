@@ -5,6 +5,7 @@ import { WhitelistManager } from '@/components/admin/whitelist-manager'
 import { WorkLocationForm } from '@/components/admin/work-location-form'
 import { ShiftsManager } from '@/components/admin/shifts-manager'
 import { ShiftAssignTable } from '@/components/admin/shift-assign-table'
+import { UserRoleManager } from '@/components/admin/user-role-manager'
 
 export default async function TeamPage() {
   const me = await requireRole(['admin', 'super_admin'])
@@ -30,6 +31,17 @@ export default async function TeamPage() {
       supabase.from('shifts').select('*').is('deleted_at', null).order('start_time'),
     ])
 
+  // ผู้ใช้ทุกบทบาท (สำหรับจัดการสิทธิ์ — super_admin เห็นทุกคนผ่าน RLS)
+  const { data: allMembers } =
+    me.role === 'super_admin'
+      ? await supabase
+          .from('users')
+          .select('id, full_name, email, role')
+          .eq('is_active', true)
+          .order('role')
+          .order('full_name')
+      : { data: null }
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">ผู้ใช้ & พื้นที่ทำงาน</h1>
@@ -43,6 +55,10 @@ export default async function TeamPage() {
         isSuperAdmin={me.role === 'super_admin'}
         defaultTeamId={me.team_id}
       />
+
+      {me.role === 'super_admin' && allMembers && (
+        <UserRoleManager members={allMembers} myId={me.id} />
+      )}
 
       <WorkLocationForm employees={employees ?? []} defaultRadius={settings.default_geofence_radius} />
 

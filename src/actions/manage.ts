@@ -31,17 +31,36 @@ export async function addAllowedEmailAction(input: unknown) {
   }
   const d = parsed.data
 
-  // ใช้ session client → RLS allowed_emails_admin บังคับสิทธิ์
+  const email = d.email.toLowerCase()
   const supabase = createClient()
-  const { error } = await supabase.from('allowed_emails').insert({
-    email: d.email.toLowerCase(),
-    role: d.role,
-    team_id: d.teamId ?? me.team_id,
-    full_name: d.fullName ?? null,
-    created_by: me.id,
-  } as never)
 
-  if (error) return { ok: false as const, error: 'เพิ่มไม่สำเร็จ (อีเมลซ้ำหรือสิทธิ์ไม่พอ)' }
+  // ถ้ามี row เดิม (รวมที่เคยลบ = soft-deleted) → กู้คืน/อัปเดตแทน insert
+  // (email เป็น unique ทั้งตาราง insert ซ้ำจะชน constraint)
+  const { data: existing } = await supabase
+    .from('allowed_emails')
+    .select('id')
+    .ilike('email', email)
+    .maybeSingle()
+
+  const { error } = existing
+    ? await supabase
+        .from('allowed_emails')
+        .update({
+          role: d.role,
+          team_id: d.teamId ?? me.team_id,
+          full_name: d.fullName ?? null,
+          deleted_at: null,
+        } as never)
+        .eq('id', existing.id)
+    : await supabase.from('allowed_emails').insert({
+        email,
+        role: d.role,
+        team_id: d.teamId ?? me.team_id,
+        full_name: d.fullName ?? null,
+        created_by: me.id,
+      } as never)
+
+  if (error) return { ok: false as const, error: 'เพิ่มไม่สำเร็จ (สิทธิ์ไม่พอ)' }
 
   await writeAudit({
     action: 'setting_updated',
@@ -49,6 +68,52 @@ export async function addAllowedEmailAction(input: unknown) {
     actorEmail: me.email,
     entityType: 'allowed_email',
     metadata: { added: d.email, role: d.role },
+  })
+  revalidatePath('/admin/team')
+  return { ok: true as const }
+}
+
+// ---- เปลี่ยนสิทธิ์ผู้ใช้ (super_admin เท่านั้น) ----
+const changeRoleSchema = z.object({
+  userId: z.string().uuid(),
+  role: z.enum(['employee', 'admin', 'super_admin']),
+})
+
+export async function changeUserRoleAction(input: unknown) {
+  const me = await getCurrentUser()
+  if (!me || me.role !== 'super_admin') return { ok: false as const, error: 'เฉพาะ Super Admin' }
+
+  const parsed = changeRoleSchema.safeParse(input)
+  if (!parsed.success) return { ok: false as const, error: 'ข้อมูลไม่ถูกต้อง' }
+  const { userId, role } = parsed.data
+
+  // กันล็อกตัวเองออกจากระบบ (เปลี่ยนสิทธิ์ตัวเองไม่ได้)
+  if (userId === me.id) return { ok: false as const, error: 'เปลี่ยนสิทธิ์ของตัวเองไม่ได้' }
+
+  const admin = createAdminClient()
+  const { data: target } = await admin
+    .from('users')
+    .select('email, role')
+    .eq('id', userId)
+    .maybeSingle()
+  if (!target) return { ok: false as const, error: 'ไม่พบผู้ใช้' }
+
+  const { error } = await admin.from('users').update({ role } as never).eq('id', userId)
+  if (error) return { ok: false as const, error: 'เปลี่ยนสิทธิ์ไม่สำเร็จ' }
+
+  // sync role ใน whitelist ให้ตรง (กันสับสนเมื่อดูรายชื่อ/ลบแล้วเพิ่มใหม่)
+  await admin
+    .from('allowed_emails')
+    .update({ role } as never)
+    .ilike('email', target.email)
+
+  await writeAudit({
+    action: 'setting_updated',
+    actorId: me.id,
+    actorEmail: me.email,
+    entityType: 'user_role',
+    entityId: userId,
+    metadata: { email: target.email, from: target.role, to: role },
   })
   revalidatePath('/admin/team')
   return { ok: true as const }
