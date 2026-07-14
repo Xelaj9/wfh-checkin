@@ -46,7 +46,7 @@ export default async function StatsPage({ searchParams }: { searchParams: { mont
 
   // RLS จำกัดขอบเขตทีมให้แล้ว
   const [{ data: employees }, { data: records }, { data: missed }] = await Promise.all([
-    supabase.from('users').select('id, full_name, email').eq('role', 'employee').eq('is_active', true),
+    supabase.from('users').select('id, full_name, email').in('role', ['employee', 'admin']).eq('is_active', true),
     supabase
       .from('attendance_records')
       .select('user_id, check_in_time, is_late, worked_minutes, status')

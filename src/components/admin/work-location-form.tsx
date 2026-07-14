@@ -77,6 +77,7 @@ export function WorkLocationForm({
   return (
     <div className="rounded-xl border bg-white dark:bg-slate-900 p-5">
       <h2 className="mb-3 font-semibold">กำหนดพื้นที่ทำงาน (Geofence)</h2>
+      <p className="mb-3 -mt-2 text-xs text-muted">รายชื่อจะขึ้นหลังพนักงาน login ด้วย Google ครั้งแรก (คนใน whitelist ที่ &quot;ยังไม่เคยเข้า&quot; จะยังไม่ปรากฏ)</p>
       {msg && (
         <p
           className={`mb-3 rounded-lg p-2 text-sm ${

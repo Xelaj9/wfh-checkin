@@ -26,6 +26,7 @@ export function ShiftAssignTable({ employees, shifts }: { employees: Emp[]; shif
   return (
     <div className="card p-5">
       <h2 className="mb-3 font-semibold">จับพนักงานเข้ากะ</h2>
+      <p className="mb-3 -mt-2 text-xs text-muted">รายชื่อจะขึ้นหลังพนักงาน login ด้วย Google ครั้งแรก</p>
       {employees.length === 0 ? (
         <p className="text-sm text-muted">ยังไม่มีพนักงาน</p>
       ) : (

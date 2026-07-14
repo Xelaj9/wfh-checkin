@@ -22,7 +22,7 @@ export default async function AdminDashboard() {
   const { data: totalUsers } = await supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
-    .eq('role', 'employee')
+    .in('role', ['employee', 'admin'])
     .eq('is_active', true)
 
   const { data: todayRecords } = await supabase
@@ -41,7 +41,7 @@ export default async function AdminDashboard() {
   const { count: employeeCount } = await supabase
     .from('users')
     .select('id', { count: 'exact', head: true })
-    .eq('role', 'employee')
+    .in('role', ['employee', 'admin'])
     .eq('is_active', true)
 
   const notCheckedIn = (employeeCount ?? 0) - checkedIn

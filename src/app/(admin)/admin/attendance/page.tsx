@@ -30,7 +30,7 @@ export default async function AttendancePage({
   const { data: employees } = await supabase
     .from('users')
     .select('id, full_name, email')
-    .eq('role', 'employee')
+    .in('role', ['employee', 'admin'])
     .eq('is_active', true)
 
   const { data: records } = await supabase

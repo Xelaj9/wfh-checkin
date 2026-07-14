@@ -24,7 +24,7 @@ export default async function TeamPage() {
       supabase
         .from('users')
         .select('id, full_name, email, shift_id')
-        .eq('role', 'employee')
+        .in('role', ['employee', 'admin'])
         .eq('is_active', true)
         .order('full_name'),
       supabase.from('work_locations').select('*, users(full_name, email)').eq('is_active', true),
