@@ -174,3 +174,69 @@ export async function upsertWorkLocationAction(input: unknown) {
   revalidatePath('/admin/team')
   return { ok: true as const }
 }
+
+const locationUpdateSchema = z.object({
+  id: z.string().uuid(),
+  label: z.string().min(1).max(100),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  radiusMeters: z.number().int().min(50).max(2000),
+})
+
+/** แก้ไขพื้นที่ทำงาน (RLS จำกัดขอบเขตทีม) */
+export async function updateWorkLocationAction(input: unknown) {
+  const me = await requireAdmin()
+  const parsed = locationUpdateSchema.safeParse(input)
+  if (!parsed.success) return { ok: false as const, error: 'ข้อมูลพิกัดไม่ถูกต้อง' }
+  const d = parsed.data
+
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('work_locations')
+    .update({
+      label: d.label,
+      latitude: d.latitude,
+      longitude: d.longitude,
+      radius_meters: d.radiusMeters,
+    } as never)
+    .eq('id', d.id)
+
+  if (error) return { ok: false as const, error: 'แก้ไขพื้นที่ไม่สำเร็จ' }
+
+  await writeAudit({
+    action: 'setting_updated',
+    actorId: me.id,
+    actorEmail: me.email,
+    entityType: 'work_location',
+    entityId: d.id,
+    metadata: { updated: d.label, radius: d.radiusMeters },
+  })
+  revalidatePath('/admin/team')
+  return { ok: true as const }
+}
+
+/** ลบพื้นที่ทำงาน (soft delete — ปิดใช้งาน ไม่ถูกใช้คำนวณ geofence อีก) */
+export async function deleteWorkLocationAction(input: unknown) {
+  const me = await requireAdmin()
+  const id = z.string().uuid().safeParse((input as { id?: string })?.id)
+  if (!id.success) return { ok: false as const, error: 'ข้อมูลไม่ถูกต้อง' }
+
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('work_locations')
+    .update({ is_active: false, deleted_at: new Date().toISOString() } as never)
+    .eq('id', id.data)
+
+  if (error) return { ok: false as const, error: 'ลบไม่สำเร็จ' }
+
+  await writeAudit({
+    action: 'setting_updated',
+    actorId: me.id,
+    actorEmail: me.email,
+    entityType: 'work_location',
+    entityId: id.data,
+    metadata: { deleted: true },
+  })
+  revalidatePath('/admin/team')
+  return { ok: true as const }
+}

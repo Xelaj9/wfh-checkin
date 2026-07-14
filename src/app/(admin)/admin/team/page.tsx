@@ -6,6 +6,7 @@ import { WorkLocationForm } from '@/components/admin/work-location-form'
 import { ShiftsManager } from '@/components/admin/shifts-manager'
 import { ShiftAssignTable } from '@/components/admin/shift-assign-table'
 import { UserRoleManager } from '@/components/admin/user-role-manager'
+import { WorkLocationTable, type LocationRow } from '@/components/admin/work-location-table'
 
 export default async function TeamPage() {
   const me = await requireRole(['admin', 'super_admin'])
@@ -62,37 +63,19 @@ export default async function TeamPage() {
 
       <WorkLocationForm employees={employees ?? []} defaultRadius={settings.default_geofence_radius} />
 
-      <div className="rounded-xl border bg-white dark:bg-slate-900 p-5">
-        <h2 className="mb-3 font-semibold">พื้นที่ที่ตั้งไว้แล้ว</h2>
-        <table className="w-full text-sm">
-          <thead className="text-left text-slate-500">
-            <tr>
-              <th className="py-1">พนักงาน</th>
-              <th className="py-1">พื้นที่</th>
-              <th className="py-1">รัศมี</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {(locations ?? []).map((l) => {
-              const u = (l as { users?: { full_name?: string; email?: string } }).users
-              return (
-                <tr key={l.id}>
-                  <td className="py-1.5">{u?.full_name ?? u?.email}</td>
-                  <td className="py-1.5">{l.label}</td>
-                  <td className="py-1.5">{l.radius_meters} ม.</td>
-                </tr>
-              )
-            })}
-            {(locations ?? []).length === 0 && (
-              <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
-                  ยังไม่ได้ตั้งพื้นที่
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <WorkLocationTable
+        locations={(locations ?? []).map((l): LocationRow => {
+          const u = (l as { users?: { full_name?: string; email?: string } }).users
+          return {
+            id: l.id,
+            label: l.label,
+            latitude: l.latitude,
+            longitude: l.longitude,
+            radius_meters: l.radius_meters,
+            ownerName: u?.full_name ?? u?.email ?? '-',
+          }
+        })}
+      />
     </div>
   )
 }
