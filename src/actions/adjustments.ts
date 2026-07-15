@@ -95,20 +95,29 @@ export async function decideAdjustmentAction(input: unknown) {
     } as never)
     .eq('id', id)
 
-  // ถ้าอนุมัติ → apply เวลาเข้า attendance (upsert ตาม user+date)
+  // ถ้าอนุมัติ → apply เวลาเข้า attendance
+  // (รองรับหลายรอบ/วัน: อัปเดตรอบล่าสุดของวันนั้น ถ้าไม่มีจึงสร้างใหม่)
   if (decision === 'approved') {
-    const patch: Record<string, unknown> = {
-      user_id: req.user_id,
-      work_date: req.target_date,
-    }
+    const patch: Record<string, unknown> = { status: 'normal' }
     if (req.requested_check_in) patch.check_in_time = req.requested_check_in
     if (req.requested_check_out) patch.check_out_time = req.requested_check_out
-    // ทำเครื่องหมายว่าเป็นการปรับโดยแอดมิน (ตรวจย้อนได้)
-    patch.status = 'normal'
 
-    await admin
+    const { data: existing } = await admin
       .from('attendance_records')
-      .upsert(patch as never, { onConflict: 'user_id,work_date' })
+      .select('id')
+      .eq('user_id', req.user_id)
+      .eq('work_date', req.target_date)
+      .order('check_in_time', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) {
+      await admin.from('attendance_records').update(patch as never).eq('id', existing.id)
+    } else {
+      await admin
+        .from('attendance_records')
+        .insert({ user_id: req.user_id, work_date: req.target_date, ...patch } as never)
+    }
   }
 
   await writeAudit({

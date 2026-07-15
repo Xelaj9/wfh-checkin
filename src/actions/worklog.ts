@@ -25,11 +25,14 @@ export async function addWorkLogAction(input: unknown) {
 
   const supabase = createClient()
   const workDate = workDateInTz(DEFAULT_TZ)
+  // ผูกกับรอบล่าสุดของวันนี้ (รองรับหลายรอบ/วัน)
   const { data: today } = await supabase
     .from('attendance_records')
     .select('id')
     .eq('user_id', user.id)
     .eq('work_date', workDate)
+    .order('check_in_time', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   // RLS worklogs_insert_self บังคับ user_id = ตัวเอง

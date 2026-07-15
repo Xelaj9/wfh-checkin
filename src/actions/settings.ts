@@ -13,6 +13,7 @@ const settingsSchema = z.object({
   presence_checks_per_day: z.number().int().min(0).max(6),
   presence_response_minutes: z.number().int().min(3).max(60),
   default_geofence_radius: z.number().int().min(50).max(2000),
+  max_checkins_per_day: z.number().int().min(1).max(10),
   data_retention_days: z.number().int().min(30).max(3650),
 })
 

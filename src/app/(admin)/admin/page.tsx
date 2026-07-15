@@ -39,14 +39,18 @@ export default async function AdminDashboard({
   // RLS จำกัดขอบเขตทีมให้อัตโนมัติ (admin เห็นเฉพาะทีมตัวเอง / super_admin เห็นหมด)
   const { data: dayRecords } = await supabase
     .from('attendance_records')
-    .select('id, status, check_in_time, check_out_time, is_late')
+    .select('id, user_id, status, check_in_time, check_out_time, is_late')
     .eq('work_date', workDate)
 
+  // นับเป็น "คน" (ไม่ซ้ำ) — รองรับเช็คอินหลายรอบ/วัน
   const recs = dayRecords ?? []
-  const checkedIn = recs.filter((r) => r.check_in_time).length
-  const checkedOut = recs.filter((r) => r.check_out_time).length
-  const late = recs.filter((r) => r.is_late).length
-  const suspicious = recs.filter((r) => r.status === 'suspicious').length
+  const uniq = (xs: (string | null)[]) => new Set(xs.filter(Boolean)).size
+  const checkedIn = uniq(recs.filter((r) => r.check_in_time).map((r) => r.user_id))
+  // เช็คเอาต์แล้ว = ไม่มีรอบค้างเปิด (คนที่กำลังทำงานไม่นับ)
+  const openUsers = new Set(recs.filter((r) => r.check_in_time && !r.check_out_time).map((r) => r.user_id))
+  const checkedOut = uniq(recs.filter((r) => r.check_out_time && !openUsers.has(r.user_id)).map((r) => r.user_id))
+  const late = uniq(recs.filter((r) => r.is_late).map((r) => r.user_id))
+  const suspicious = uniq(recs.filter((r) => r.status === 'suspicious').map((r) => r.user_id))
   const pending = recs.filter((r) => r.status === 'pending_review').length
 
   // นับพนักงานทั้งหมด (count อยู่ใน response header → ใช้ select count)

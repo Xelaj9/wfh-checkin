@@ -119,6 +119,47 @@ export async function changeUserRoleAction(input: unknown) {
   return { ok: true as const }
 }
 
+const renameSchema = z.object({
+  userId: z.string().uuid(),
+  fullName: z.string().min(1).max(100),
+})
+
+/** แก้ชื่อที่แสดงของผู้ใช้ (admin แก้ได้เฉพาะคนในทีมตัวเอง / super_admin แก้ได้ทุกคน) */
+export async function updateUserNameAction(input: unknown) {
+  const me = await requireAdmin()
+  const parsed = renameSchema.safeParse(input)
+  if (!parsed.success) return { ok: false as const, error: 'กรอกชื่อ 1–100 ตัวอักษร' }
+  const { userId, fullName } = parsed.data
+
+  const admin = createAdminClient()
+  const { data: target } = await admin
+    .from('users')
+    .select('email, full_name, team_id')
+    .eq('id', userId)
+    .maybeSingle()
+  if (!target) return { ok: false as const, error: 'ไม่พบผู้ใช้' }
+  if (me.role !== 'super_admin' && target.team_id !== me.team_id) {
+    return { ok: false as const, error: 'อยู่นอกขอบเขตทีม' }
+  }
+
+  const { error } = await admin.from('users').update({ full_name: fullName } as never).eq('id', userId)
+  if (error) return { ok: false as const, error: 'แก้ชื่อไม่สำเร็จ' }
+
+  // sync ชื่อใน whitelist ให้ตรง
+  await admin.from('allowed_emails').update({ full_name: fullName } as never).ilike('email', target.email)
+
+  await writeAudit({
+    action: 'setting_updated',
+    actorId: me.id,
+    actorEmail: me.email,
+    entityType: 'user_name',
+    entityId: userId,
+    metadata: { email: target.email, from: target.full_name, to: fullName },
+  })
+  revalidatePath('/admin/team')
+  return { ok: true as const }
+}
+
 export async function removeAllowedEmailAction(input: unknown) {
   const me = await requireAdmin()
   const id = z.string().uuid().safeParse((input as { id?: string })?.id)

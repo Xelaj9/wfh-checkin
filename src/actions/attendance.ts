@@ -142,18 +142,29 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
   const startTime = shift?.start_time?.slice(0, 5) ?? team?.work_start ?? '09:00'
   const graceMin = shift?.late_grace_minutes ?? team?.late_grace_minutes ?? 15
 
-  // กัน duplicate check-in ในวันเดียว
-  const { data: existing } = await admin
+  const settings = await getSettings()
+
+  // รอบเช็คอินของวันนี้ (รองรับหลายรอบตาม max_checkins_per_day)
+  const { data: todayRecords } = await admin
     .from('attendance_records')
-    .select('id, check_in_time')
+    .select('id, check_in_time, check_out_time')
     .eq('user_id', user.id)
     .eq('work_date', workDate)
-    .maybeSingle()
-  if (existing?.check_in_time) {
-    return { ok: false, error: 'คุณเช็คอินของวันนี้ไปแล้ว' }
+    .order('check_in_time', { ascending: true })
+  const rounds = todayRecords ?? []
+  const openRound = rounds.find((r) => r.check_in_time && !r.check_out_time)
+  if (openRound) {
+    return { ok: false, error: 'คุณกำลังทำงานอยู่ — เช็คเอาต์รอบปัจจุบันก่อนจึงจะเช็คอินรอบใหม่ได้' }
   }
-
-  const settings = await getSettings()
+  if (rounds.length >= settings.max_checkins_per_day) {
+    return {
+      ok: false,
+      error:
+        settings.max_checkins_per_day === 1
+          ? 'คุณเช็คอินของวันนี้ไปแล้ว'
+          : `เช็คอินครบ ${settings.max_checkins_per_day} รอบของวันนี้แล้ว`,
+    }
+  }
 
   // ตรวจ setting: ปิด location = เช็คอินได้ไหม
   if (data.locationDenied && settings.block_checkin_without_location) {
@@ -225,33 +236,28 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
   })
   const status = riskToStatus(risk.level)
 
-  // เขียน attendance ผ่าน service role
-  const { error } = await admin
-    .from('attendance_records')
-    .upsert(
-      {
-        id: existing?.id,
-        user_id: user.id,
-        team_id: user.team_id,
-        shift_id: shiftId,
-        work_date: workDate,
-        check_in_time: now.toISOString(),
-        check_in_lat: data.lat,
-        check_in_lng: data.lng,
-        check_in_accuracy: data.accuracy,
-        check_in_ip: ip,
-        check_in_device_id: device.id,
-        check_in_within_geofence: withinGeofence,
-        check_in_selfie_path: data.selfiePath ?? null,
-        work_plan: data.workPlan ?? null,
-        is_late: isLate,
-        risk_score: risk.score,
-        risk_level: risk.level,
-        risk_factors: risk.factors as never,
-        status,
-      } as never,
-      { onConflict: 'user_id,work_date' }
-    )
+  // เขียน attendance ผ่าน service role — 1 รอบ = 1 แถว (insert เสมอ)
+  // "มาสาย" นับเฉพาะรอบแรกของวัน (รอบถัดไปไม่เทียบเวลาเข้ากะ)
+  const { error } = await admin.from('attendance_records').insert({
+    user_id: user.id,
+    team_id: user.team_id,
+    shift_id: shiftId,
+    work_date: workDate,
+    check_in_time: now.toISOString(),
+    check_in_lat: data.lat,
+    check_in_lng: data.lng,
+    check_in_accuracy: data.accuracy,
+    check_in_ip: ip,
+    check_in_device_id: device.id,
+    check_in_within_geofence: withinGeofence,
+    check_in_selfie_path: data.selfiePath ?? null,
+    work_plan: data.workPlan ?? null,
+    is_late: rounds.length === 0 ? isLate : false,
+    risk_score: risk.score,
+    risk_level: risk.level,
+    risk_factors: risk.factors as never,
+    status,
+  } as never)
 
   if (error) {
     await writeAudit({ action: 'failed_check_in', actorId: user.id, metadata: { error: error.message } })
@@ -308,15 +314,19 @@ export async function checkOutAction(input: unknown): Promise<ActionResult> {
   const tz = team?.timezone ?? DEFAULT_TZ
   const workDate = workDateInTz(tz)
 
+  // หา "รอบที่ยังเปิดอยู่" ล่าสุดของวันนี้ (รองรับหลายรอบ)
   const { data: record } = await admin
     .from('attendance_records')
     .select('id, check_in_time, check_out_time, risk_score, risk_factors')
     .eq('user_id', user.id)
     .eq('work_date', workDate)
+    .not('check_in_time', 'is', null)
+    .is('check_out_time', null)
+    .order('check_in_time', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
-  if (!record?.check_in_time) return { ok: false, error: 'ยังไม่ได้เช็คอินวันนี้' }
-  if (record.check_out_time) return { ok: false, error: 'คุณเช็คเอาต์ไปแล้ว' }
+  if (!record?.check_in_time) return { ok: false, error: 'ไม่มีรอบที่กำลังทำงานอยู่ — เช็คอินก่อน' }
 
   const device = await resolveDevice(admin, user.id, data.device)
   const now = new Date()

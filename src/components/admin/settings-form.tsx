@@ -57,6 +57,13 @@ export function SettingsForm({ initial }: { initial: AppSettings }) {
         onChange={(v) => setS({ ...s, default_geofence_radius: v })}
       />
       <NumberField
+        label="จำนวนรอบเช็คอินสูงสุดต่อวัน (1–10)"
+        value={s.max_checkins_per_day}
+        min={1}
+        max={10}
+        onChange={(v) => setS({ ...s, max_checkins_per_day: v })}
+      />
+      <NumberField
         label="ระยะเวลาเก็บข้อมูล (วัน, 30–3650)"
         value={s.data_retention_days}
         min={30}

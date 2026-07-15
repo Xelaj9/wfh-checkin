@@ -25,8 +25,8 @@ function fmtMinAsTime(min: number): string {
 }
 
 interface Stat {
-  present: number
-  late: number
+  presentDates: Set<string>
+  lateDates: Set<string>
   workedMin: number
   flagged: number
   missed: number
@@ -49,7 +49,7 @@ export default async function StatsPage({ searchParams }: { searchParams: { mont
     supabase.from('users').select('id, full_name, email').in('role', ['employee', 'admin']).eq('is_active', true),
     supabase
       .from('attendance_records')
-      .select('user_id, check_in_time, is_late, worked_minutes, status')
+      .select('user_id, work_date, check_in_time, is_late, worked_minutes, status')
       .gte('work_date', start)
       .lte('work_date', end),
     admin
@@ -62,23 +62,31 @@ export default async function StatsPage({ searchParams }: { searchParams: { mont
 
   const stats = new Map<string, Stat>()
   const get = (id: string) => {
-    if (!stats.has(id)) stats.set(id, { present: 0, late: 0, workedMin: 0, flagged: 0, missed: 0, inMinutes: [] })
+    if (!stats.has(id))
+      stats.set(id, { presentDates: new Set(), lateDates: new Set(), workedMin: 0, flagged: 0, missed: 0, inMinutes: [] })
     return stats.get(id)!
   }
+  // นับ "วัน" แบบไม่ซ้ำ (รองรับเช็คอินหลายรอบ/วัน — ชม.รวมยังบวกทุกรอบ)
+  const seenFirstIn = new Set<string>()
   for (const r of records ?? []) {
     if (!r.check_in_time) continue
     const s = get(r.user_id)
-    s.present++
-    if (r.is_late) s.late++
+    s.presentDates.add(r.work_date)
+    if (r.is_late) s.lateDates.add(r.work_date)
     if (r.worked_minutes) s.workedMin += r.worked_minutes
     if (r.status === 'suspicious' || r.status === 'pending_review') s.flagged++
-    s.inMinutes.push(minutesOfDay(r.check_in_time))
+    // เวลาเข้าเฉลี่ย: นับเฉพาะรอบแรกของแต่ละวัน
+    const key = `${r.user_id}|${r.work_date}`
+    if (!seenFirstIn.has(key)) {
+      seenFirstIn.add(key)
+      s.inMinutes.push(minutesOfDay(r.check_in_time))
+    }
   }
   for (const p of missed ?? []) get(p.user_id).missed++
 
   const rows = (employees ?? [])
     .map((e) => ({ e, s: stats.get(e.id) }))
-    .sort((a, b) => (b.s?.present ?? 0) - (a.s?.present ?? 0))
+    .sort((a, b) => (b.s?.presentDates.size ?? 0) - (a.s?.presentDates.size ?? 0))
 
   // เดือนก่อนหน้า/ถัดไป สำหรับปุ่มเลื่อน
   const prev = new Date(y, m - 2, 1)
@@ -112,8 +120,8 @@ export default async function StatsPage({ searchParams }: { searchParams: { mont
           </thead>
           <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800">
             {rows.map(({ e, s }) => {
-              const present = s?.present ?? 0
-              const late = s?.late ?? 0
+              const present = s?.presentDates.size ?? 0
+              const late = s?.lateDates.size ?? 0
               const onTimeRate = present > 0 ? Math.round(((present - late) / present) * 100) : null
               const avgIn = s && s.inMinutes.length > 0 ? fmtMinAsTime(s.inMinutes.reduce((a, b) => a + b, 0) / s.inMinutes.length) : '-'
               return (
