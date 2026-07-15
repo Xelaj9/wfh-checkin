@@ -3,6 +3,7 @@ import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { workDateInTz, timeInTz, formatMinutes } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { DatePickerNav } from '@/components/admin/date-picker-nav'
 
 const DEFAULT_TZ = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE ?? 'Asia/Bangkok'
 
@@ -62,15 +63,7 @@ export default async function AttendancePage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">การเข้างานรายวัน</h1>
-        <form>
-          <input
-            type="date"
-            name="date"
-            defaultValue={date}
-            className="rounded-lg border px-3 py-1.5 text-sm"
-          />
-          <input type="hidden" name="status" value={filter} />
-        </form>
+        <DatePickerNav value={date} basePath="/admin/attendance" />
       </div>
 
       {/* filter chips */}
