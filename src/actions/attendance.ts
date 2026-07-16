@@ -10,6 +10,7 @@ import { getClientIp, writeAudit } from '@/lib/audit'
 import { checkGeofence } from '@/lib/location'
 import { computeRisk, riskToStatus, toLevel } from '@/lib/risk-scoring'
 import { isDeviceClaimInconsistent, osFromUA } from '@/lib/ua'
+import { isTimezoneMismatch } from '@/lib/tz'
 import { workDateInTz } from '@/lib/utils'
 import { getSettings } from '@/lib/settings'
 
@@ -199,8 +200,9 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
   // device
   const device = await resolveDevice(admin, user.id, data.device)
 
-  // timezone mismatch (เครื่อง vs บริษัท)
-  const tzMismatch = !!data.device.timezone && data.device.timezone !== tz
+  // timezone mismatch (เครื่อง vs บริษัท) — เทียบด้วย UTC offset จริง
+  // (Asia/Vientiane == Asia/Bangkok = +7 → พนักงานที่ลาวไม่โดน flag)
+  const tzMismatch = isTimezoneMismatch(data.device.timezone, tz)
 
   // มาสาย?
   const now = new Date()
