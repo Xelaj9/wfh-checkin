@@ -58,17 +58,59 @@ export async function GET(request: Request) {
     }
   }
 
+  // 1.5) ปิดรอบที่เปิดค้างนานผิดปกติ (>18 ชม.) อัตโนมัติ — กันรอบค้างถาวร
+  // สมมติความยาวรอบ 8 ชม. + ตั้ง pending_review ให้แอดมินตรวจ (พนักงานส่งคำขอแก้เวลาได้)
+  const staleCutoff = new Date(Date.now() - 18 * 3600_000).toISOString()
+  const { data: staleRounds } = await admin
+    .from('attendance_records')
+    .select('id, user_id, check_in_time, risk_score')
+    .not('check_in_time', 'is', null)
+    .is('check_out_time', null)
+    .lt('check_in_time', staleCutoff)
+  let autoClosed = 0
+  for (const s of staleRounds ?? []) {
+    const inTime = new Date(s.check_in_time as string)
+    const autoOut = new Date(inTime.getTime() + 8 * 3600_000)
+    const newScore = Math.min(100, (s.risk_score ?? 0) + 10)
+    await admin
+      .from('attendance_records')
+      .update({
+        check_out_time: autoOut.toISOString(),
+        worked_minutes: 480,
+        work_summary: '[ปิดรอบอัตโนมัติ: ไม่มีการเช็คเอาต์]',
+        risk_score: newScore,
+        risk_level: newScore >= 61 ? 'suspicious' : 'review',
+        status: newScore >= 61 ? 'suspicious' : 'pending_review',
+      } as never)
+      .eq('id', s.id)
+    await writeAudit({
+      action: 'auto_checkout',
+      actorId: s.user_id,
+      entityType: 'attendance',
+      entityId: s.id,
+      metadata: { reason: 'no_checkout_18h', assumedMinutes: 480 },
+    })
+    autoClosed++
+  }
+
   // 2) สุ่มสร้างรายการใหม่
   let created = 0
   if (settings.presence_checks_per_day > 0) {
-    // ทุก "รอบ" ของวันนี้ (ใช้นับโควตาสุ่มต่อคนต่อวัน — ไม่รีเซ็ตเมื่อเช็คอินรอบใหม่)
+    // ทุก "รอบ" ของวันนี้ + รอบเปิดข้ามคืน (กะดึกหลังเที่ยงคืนก็ยังถูกสุ่ม)
     const { data: allToday } = await admin
       .from('attendance_records')
       .select('id, user_id, check_in_time, check_out_time')
       .eq('work_date', workDate)
       .not('check_in_time', 'is', null)
+    const { data: openOvernight } = await admin
+      .from('attendance_records')
+      .select('id, user_id, check_in_time, check_out_time')
+      .neq('work_date', workDate)
+      .not('check_in_time', 'is', null)
+      .is('check_out_time', null)
+      .gte('check_in_time', staleCutoff)
 
-    const todayRows = allToday ?? []
+    const todayRows = [...(allToday ?? []), ...(openOvernight ?? [])]
     // รอบที่ยังเปิดอยู่ (กำลังทำงาน) — สุ่มได้เฉพาะกลุ่มนี้
     const active = todayRows.filter((r) => !r.check_out_time)
 
@@ -119,5 +161,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, expired: expired?.length ?? 0, created })
+  return NextResponse.json({ ok: true, expired: expired?.length ?? 0, autoClosed, created })
 }

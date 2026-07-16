@@ -31,15 +31,28 @@ export default async function EmployeeHome() {
     .order('check_in_time', { ascending: true })
 
   const rounds = todayRounds ?? []
-  const open = rounds.find((r) => r.check_in_time && !r.check_out_time) ?? null
+
+  // รอบเปิดค้าง มองย้อน 24 ชม. ข้าม work_date (กะข้ามเที่ยงคืน เช่น 16:00–00:00)
+  const { data: openRows } = await supabase
+    .from('attendance_records')
+    .select('*, shifts(name, start_time, end_time)')
+    .eq('user_id', user.id)
+    .not('check_in_time', 'is', null)
+    .is('check_out_time', null)
+    .gte('check_in_time', new Date(Date.now() - 24 * 3600_000).toISOString())
+    .order('check_in_time', { ascending: false })
+    .limit(1)
+  const open = openRows?.[0] ?? null
+  const openFromYesterday = open != null && open.work_date !== workDate
+
   const latest = rounds[rounds.length - 1] ?? null
   const current = open ?? latest
   const maxRounds = settings.max_checkins_per_day
   const totalMinutes = rounds.reduce((sum, r) => sum + (r.worked_minutes ?? 0), 0)
-  const firstIn = rounds.find((r) => r.check_in_time)?.check_in_time ?? null
+  const firstIn = open?.check_in_time ?? rounds.find((r) => r.check_in_time)?.check_in_time ?? null
   const lastOut = [...rounds].reverse().find((r) => r.check_out_time)?.check_out_time ?? null
 
-  // state: กำลังทำงาน / เช็คอินรอบใหม่ได้ / ครบทุกรอบแล้ว
+  // state: กำลังทำงาน (รวมรอบข้ามคืน) / เช็คอินรอบใหม่ได้ / ครบทุกรอบแล้ว
   const state = open ? 'working' : rounds.length < maxRounds ? 'not_checked_in' : 'checked_out'
 
   const currentShift = (current as { shifts?: { name?: string; start_time?: string; end_time?: string } } | null)
@@ -97,6 +110,9 @@ export default async function EmployeeHome() {
           {state === 'not_checked_in' && (rounds.length === 0 ? 'ยังไม่เช็คอิน' : 'พักระหว่างรอบ')}
           {state === 'checked_out' && 'เช็คเอาต์แล้ว'}
         </p>
+        {openFromYesterday && (
+          <p className="mt-1 text-sm text-amber-600">รอบนี้เริ่มเมื่อวาน (กะข้ามเที่ยงคืน) — เช็คเอาต์ได้ตามปกติ</p>
+        )}
         {maxRounds > 1 && (
           <p className="mt-1 text-sm text-slate-400">
             รอบวันนี้: {rounds.length}/{maxRounds}

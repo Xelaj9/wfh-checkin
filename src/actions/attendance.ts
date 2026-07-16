@@ -153,8 +153,18 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
     .eq('work_date', workDate)
     .order('check_in_time', { ascending: true })
   const rounds = todayRecords ?? []
-  const openRound = rounds.find((r) => r.check_in_time && !r.check_out_time)
-  if (openRound) {
+
+  // รอบเปิดค้าง มองย้อน 24 ชม. ข้าม work_date ด้วย
+  // (กะข้ามเที่ยงคืน เช่น 16:00–00:00 — รอบเมื่อวานยังเปิดอยู่ ต้องเช็คเอาต์ก่อน)
+  const { data: openAny } = await admin
+    .from('attendance_records')
+    .select('id')
+    .eq('user_id', user.id)
+    .not('check_in_time', 'is', null)
+    .is('check_out_time', null)
+    .gte('check_in_time', new Date(Date.now() - 24 * 3600_000).toISOString())
+    .limit(1)
+  if ((openAny ?? []).length > 0) {
     return { ok: false, error: 'คุณกำลังทำงานอยู่ — เช็คเอาต์รอบปัจจุบันก่อนจึงจะเช็คอินรอบใหม่ได้' }
   }
   if (rounds.length >= settings.max_checkins_per_day) {
@@ -316,14 +326,15 @@ export async function checkOutAction(input: unknown): Promise<ActionResult> {
   const tz = team?.timezone ?? DEFAULT_TZ
   const workDate = workDateInTz(tz)
 
-  // หา "รอบที่ยังเปิดอยู่" ล่าสุดของวันนี้ (รองรับหลายรอบ)
+  // หา "รอบที่ยังเปิดอยู่" ล่าสุดใน 24 ชม. — ไม่จำกัด work_date
+  // (กะข้ามเที่ยงคืน: เช็คอินเมื่อวาน เช็คเอาต์หลังเที่ยงคืนได้ปกติ)
   const { data: record } = await admin
     .from('attendance_records')
     .select('id, check_in_time, check_out_time, risk_score, risk_factors')
     .eq('user_id', user.id)
-    .eq('work_date', workDate)
     .not('check_in_time', 'is', null)
     .is('check_out_time', null)
+    .gte('check_in_time', new Date(Date.now() - 24 * 3600_000).toISOString())
     .order('check_in_time', { ascending: false })
     .limit(1)
     .maybeSingle()

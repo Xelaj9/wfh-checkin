@@ -18,6 +18,7 @@ export type AuditAction =
   | 'adjustment_rejected'
   | 'presence_acknowledged'
   | 'presence_missed'
+  | 'auto_checkout'
   | 'report_exported'
 
 interface WriteAuditArgs {
