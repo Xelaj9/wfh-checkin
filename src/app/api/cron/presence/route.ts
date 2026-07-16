@@ -61,30 +61,33 @@ export async function GET(request: Request) {
   // 2) สุ่มสร้างรายการใหม่
   let created = 0
   if (settings.presence_checks_per_day > 0) {
-    // พนักงานที่กำลังทำงาน (เช็คอินแล้ว ยังไม่เช็คเอาต์)
-    const { data: active } = await admin
+    // ทุก "รอบ" ของวันนี้ (ใช้นับโควตาสุ่มต่อคนต่อวัน — ไม่รีเซ็ตเมื่อเช็คอินรอบใหม่)
+    const { data: allToday } = await admin
       .from('attendance_records')
-      .select('id, user_id')
+      .select('id, user_id, check_in_time, check_out_time')
       .eq('work_date', workDate)
       .not('check_in_time', 'is', null)
-      .is('check_out_time', null)
 
-    for (const rec of active ?? []) {
-      // นับ presence check ของวันนี้
-      const { count } = await admin
-        .from('presence_checks')
-        .select('id', { count: 'exact', head: true })
-        .eq('attendance_id', rec.id)
+    const todayRows = allToday ?? []
+    // รอบที่ยังเปิดอยู่ (กำลังทำงาน) — สุ่มได้เฉพาะกลุ่มนี้
+    const active = todayRows.filter((r) => !r.check_out_time)
 
-      const todayCount = count ?? 0
-      // มี pending ค้างอยู่หรือไม่
-      const { count: pendingCount } = await admin
-        .from('presence_checks')
-        .select('id', { count: 'exact', head: true })
-        .eq('attendance_id', rec.id)
-        .eq('status', 'pending')
+    // นับ presence ของ "ทุกรอบวันนี้" รวมกันต่อคน (query เดียว)
+    const todayIds = todayRows.map((r) => r.id)
+    const { data: todayChecks } = todayIds.length
+      ? await admin.from('presence_checks').select('user_id, status').in('attendance_id', todayIds)
+      : { data: [] }
+    const totalByUser = new Map<string, number>()
+    const pendingByUser = new Map<string, number>()
+    for (const c of todayChecks ?? []) {
+      totalByUser.set(c.user_id, (totalByUser.get(c.user_id) ?? 0) + 1)
+      if (c.status === 'pending') pendingByUser.set(c.user_id, (pendingByUser.get(c.user_id) ?? 0) + 1)
+    }
 
-      if (todayCount >= settings.presence_checks_per_day || (pendingCount ?? 0) > 0) continue
+    for (const rec of active) {
+      const todayCount = totalByUser.get(rec.user_id) ?? 0
+      const pendingCount = pendingByUser.get(rec.user_id) ?? 0
+      if (todayCount >= settings.presence_checks_per_day || pendingCount > 0) continue
 
       // สุ่มความน่าจะเป็น เพื่อไม่ให้ออกมาเป็นจังหวะเดียวกันทุกคน/ทุกครั้ง
       if (Math.random() > 0.5) continue
@@ -110,6 +113,9 @@ export async function GET(request: Request) {
         data: { presence_id: pc?.id },
       } as never)
       created++
+      // อัปเดตตัวนับในหน่วยความจำ กันสุ่มซ้ำคนเดิมใน loop เดียวกัน
+      totalByUser.set(rec.user_id, todayCount + 1)
+      pendingByUser.set(rec.user_id, pendingCount + 1)
     }
   }
 

@@ -48,12 +48,14 @@ export function CheckInPanel({
   userId,
   shifts = [],
   defaultShiftId = null,
+  roundsUsed = 0,
 }: {
   state: State
   selfieRequired?: boolean
   userId: string
   shifts?: ShiftOption[]
   defaultShiftId?: string | null
+  roundsUsed?: number
 }) {
   const [isPending, startTransition] = useTransition()
   const [result, setResult] = useState<ActionResult | null>(null)
@@ -133,6 +135,12 @@ export function CheckInPanel({
 
       {state === 'not_checked_in' && (
         <>
+          {roundsUsed > 0 && (
+            <div className="rounded-lg bg-slate-100 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              คุณเช็คเอาต์รอบก่อนหน้าแล้ว — เช็คอินอีกครั้ง<b>เมื่อพร้อมเริ่มรอบถัดไป</b>เท่านั้น
+              (ไม่ใช่การสุ่มยืนยันตัวตน ไม่บังคับ)
+            </div>
+          )}
           {selfieRequired && (
             <div className="rounded-lg border p-3">
               <p className="mb-2 text-sm font-medium">ถ่ายรูปยืนยันตัวตน (บังคับ)</p>
@@ -169,7 +177,11 @@ export function CheckInPanel({
             disabled={loading}
             className="w-full rounded-xl bg-slate-900 dark:bg-brand-600 py-4 text-base font-semibold text-white disabled:opacity-60"
           >
-            {loading ? 'กำลังเช็คอิน…' : '🟢 เช็คอินเข้างาน'}
+            {loading
+              ? 'กำลังเช็คอิน…'
+              : roundsUsed > 0
+                ? `🟢 เช็คอินรอบใหม่ (รอบที่ ${roundsUsed + 1})`
+                : '🟢 เช็คอินเข้างาน'}
           </button>
           <p className="text-center text-xs text-slate-400">
             ระบบจะขอตำแหน่งและข้อมูลอุปกรณ์เฉพาะตอนเช็คอินเท่านั้น

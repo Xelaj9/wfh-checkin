@@ -152,6 +152,7 @@ export default async function EmployeeHome() {
         userId={user.id}
         shifts={shifts ?? []}
         defaultShiftId={user.shift_id}
+        roundsUsed={rounds.length}
       />
 
       {/* บันทึกงานระหว่างวัน (แสดงเมื่อเช็คอินแล้ว) */}
