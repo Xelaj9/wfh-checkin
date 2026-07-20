@@ -111,7 +111,11 @@ export default async function EmployeeHome() {
           {state === 'checked_out' && 'เช็คเอาต์แล้ว'}
         </p>
         {openFromYesterday && (
-          <p className="mt-1 text-sm text-amber-600">รอบนี้เริ่มเมื่อวาน (กะข้ามเที่ยงคืน) — เช็คเอาต์ได้ตามปกติ</p>
+          <p className="mt-1 text-sm text-amber-600">
+            {open!.work_date > workDate
+              ? `รอบนี้เป็นกะของวันที่ ${open!.work_date} (เข้าก่อนเวลา) — เช็คเอาต์ได้ตามปกติ`
+              : 'รอบนี้เริ่มเมื่อวาน (กะข้ามเที่ยงคืน) — เช็คเอาต์ได้ตามปกติ'}
+          </p>
         )}
         {maxRounds > 1 && (
           <p className="mt-1 text-sm text-slate-400">

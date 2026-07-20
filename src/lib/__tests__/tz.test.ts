@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tzOffsetMinutes, isTimezoneMismatch } from '@/lib/tz'
+import { tzOffsetMinutes, isTimezoneMismatch, shiftStartUtcMs, addDays } from '@/lib/tz'
 
 describe('tzOffsetMinutes', () => {
   it('Bangkok = +420 นาที (UTC+7)', () => {
@@ -36,5 +36,29 @@ describe('isTimezoneMismatch — พนักงานข้ามประเ�
   it('ไม่มีค่า/โซนพัง → ไม่ตัดสิน (false)', () => {
     expect(isTimezoneMismatch(undefined, 'Asia/Bangkok')).toBe(false)
     expect(isTimezoneMismatch('Not/AZone', 'Asia/Bangkok')).toBe(false)
+  })
+})
+
+describe('shiftStartUtcMs / addDays — เข้าก่อนเที่ยงคืนของกะวันถัดไป', () => {
+  it('กะ 00:00 วันที่ 20 (Bangkok) = 19 เวลา 17:00 UTC', () => {
+    const ms = shiftStartUtcMs('2026-06-20', '00:00', 'Asia/Bangkok')
+    expect(ms).toBe(Date.parse('2026-06-19T17:00:00Z'))
+  })
+  it('เช็คอิน 19 เวลา 23:45 (16:45Z) ก่อนกะ 00:00 ของวันที่ 20 → ไม่สาย', () => {
+    const start = shiftStartUtcMs('2026-06-20', '00:00', 'Asia/Bangkok')!
+    const checkin = Date.parse('2026-06-19T16:45:00Z')
+    expect(checkin < start + 15 * 60_000).toBe(true)
+  })
+  it('เช็คอิน 20 เวลา 00:30 กะ 00:00 grace 15 → สาย', () => {
+    const start = shiftStartUtcMs('2026-06-20', '00:00', 'Asia/Bangkok')!
+    const checkin = Date.parse('2026-06-19T17:30:00Z')
+    expect(checkin > start + 15 * 60_000).toBe(true)
+  })
+  it('addDays ข้ามเดือน/ปี', () => {
+    expect(addDays('2026-06-30', 1)).toBe('2026-07-01')
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
+  })
+  it('โซนพัง → null', () => {
+    expect(shiftStartUtcMs('2026-06-20', '00:00', 'Not/AZone')).toBeNull()
   })
 })

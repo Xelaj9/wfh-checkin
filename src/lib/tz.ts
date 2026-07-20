@@ -34,3 +34,23 @@ export function isTimezoneMismatch(deviceTz: string | undefined | null, companyT
   if (dev == null || com == null) return false
   return dev !== com
 }
+
+/**
+ * เวลาเริ่มกะเป็น epoch ms — จาก "วันที่ของกะ" + เวลาเริ่ม (HH:MM) ในโซนเวลาบริษัท
+ * ใช้คิด "มาสาย" ให้ถูกแม้เช็คอินก่อนเที่ยงคืนสำหรับกะของวันถัดไป
+ * เช่น กะ 00:00 ของวันที่ 20, เช็คอิน 19 เวลา 23:45 → ยังไม่ถึงเวลาเริ่ม → ไม่สาย
+ */
+export function shiftStartUtcMs(workDate: string, startHHMM: string, tz: string): number | null {
+  const off = tzOffsetMinutes(tz)
+  if (off == null) return null
+  const base = Date.parse(`${workDate}T${startHHMM}:00Z`)
+  if (Number.isNaN(base)) return null
+  return base - off * 60_000
+}
+
+/** เลื่อนวันที่ YYYY-MM-DD ไป n วัน */
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}

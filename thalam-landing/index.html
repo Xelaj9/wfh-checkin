@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ถลำ THALAM — อาหาร ดนตรีสด นางรอง</title>
+<style>
+  :root {
+    --green: #17351d;       /* เขียวเข้มตามโลโก้ */
+    --green-deep: #0e2212;
+    --black: #0a0d0a;
+    --white: #f7f5ef;
+    --muted: #b9c4b6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Helvetica Neue", "Arial", "Noto Sans Thai", sans-serif;
+    background: var(--black);
+    color: var(--white);
+  }
+  .display {
+    font-family: "Arial Black", "Avenir Next Condensed", "Helvetica Neue", sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+  img { max-width: 100%; display: block; }
+
+  /* ── Header ── */
+  header {
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 14px 48px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid rgba(247,245,239,.15);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: var(--white);
+  }
+  .logo img { height: 56px; width: 56px; object-fit: cover; border-radius: 8px; }
+  .logo .thai { font-size: 34px; font-weight: 900; line-height: 1; }
+  .logo .en {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+  }
+  nav { display: flex; align-items: center; gap: 30px; }
+  nav a {
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  nav a:hover { opacity: .7; }
+  .btn {
+    display: inline-block;
+    background: var(--white);
+    color: var(--green);
+    font-weight: 900;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    padding: 14px 26px;
+    border-radius: 6px;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); opacity: .9; }
+  .btn.primary { font-size: 17px; padding: 18px 38px; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--white);
+    border: 2px solid var(--white);
+  }
+
+  /* ── Hero: รูปโคมไฟจริงของร้านเป็นพื้นหลัง ── */
+  .hero {
+    position: relative;
+    min-height: 660px;
+    display: flex;
+    align-items: center;
+    padding: 72px 48px;
+    background:
+      linear-gradient(100deg, rgba(10,13,10,.92) 0%, rgba(10,13,10,.55) 45%, rgba(10,13,10,.15) 75%),
+      url("hero.jpg") 62% 40% / cover no-repeat;
+  }
+  .hero-copy { max-width: 660px; }
+  .hero-logo { width: 150px; margin-bottom: 28px; border-radius: 12px; }
+  .kicker {
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .kicker .star { margin: 0 10px; color: var(--white); }
+  .hero h1 {
+    font-size: clamp(46px, 6.8vw, 90px);
+    line-height: 1.0;
+    color: var(--white);
+    margin-bottom: 18px;
+  }
+  .hero h1 em { font-style: normal; color: #8db28f; }
+  .hero .lede { color: #d5ddd2; font-size: 18px; line-height: 1.7; margin-bottom: 36px; max-width: 520px; }
+  .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+
+  /* ── Marquee strip ── */
+  .strip {
+    background: var(--white);
+    color: var(--green);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 14px 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .strip-inner { display: inline-block; animation: slide 24s linear infinite; }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ── Sections ── */
+  section { padding: 90px 48px; }
+  .section-head { text-align: center; margin-bottom: 56px; }
+  .section-head .kicker { font-size: 15px; margin-bottom: 12px; }
+  .section-head h2 { font-size: clamp(36px, 4.5vw, 56px); color: var(--white); }
+
+  /* ── Gallery บรรยากาศร้าน ── */
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .gallery figure {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(247,245,239,.14);
+    aspect-ratio: 4 / 3;
+  }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+  .gallery figure:hover img { transform: scale(1.04); }
+  .gallery figcaption {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 14px 18px;
+    font-weight: 800;
+    background: linear-gradient(transparent, rgba(10,13,10,.85));
+  }
+
+  /* ── จองโต๊ะ (โซนจริงของร้าน) ── */
+  .zones { background: var(--green); }
+  .zone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .zone {
+    background: rgba(247,245,239,.07);
+    border: 1px solid rgba(247,245,239,.18);
+    border-radius: 14px;
+    padding: 30px;
+  }
+  .zone h3 { font-size: 22px; text-transform: uppercase; margin-bottom: 10px; }
+  .zone .tag { color: #a9c3aa; font-weight: 800; font-size: 14px; margin-bottom: 12px; }
+  .zone p { color: #d5ddd2; line-height: 1.7; font-size: 15px; }
+  .zones .cta-row { text-align: center; margin-top: 44px; }
+
+  /* ── เมนู ── */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 28px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #101510;
+    border: 1px solid rgba(247,245,239,.14);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .card:hover { transform: translateY(-6px); border-color: var(--white); }
+  .card .thumb {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 76px;
+    background: radial-gradient(340px 190px at 50% 120%, rgba(23,53,29,.95), transparent 75%), #0c100c;
+  }
+  .card .body { padding: 22px 24px 28px; }
+  .card h3 { font-size: 21px; margin-bottom: 8px; text-transform: uppercase; }
+  .card p { color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+  /* ── ที่ตั้ง ── */
+  .loc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 28px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .loc {
+    background: #101510;
+    border: 1px solid rgba(247,245,239,.14);
+    border-radius: 14px;
+    padding: 32px;
+  }
+  .loc h3 { font-size: 22px; text-transform: uppercase; margin-bottom: 12px; }
+  .loc p { color: var(--muted); line-height: 1.8; font-size: 15px; }
+  .loc a { color: #8db28f; }
+
+  /* ── CTA ── */
+  .cta { text-align: center; background: linear-gradient(180deg, var(--black), #0d160e); }
+  .cta h2 { font-size: clamp(38px, 5vw, 62px); margin-bottom: 32px; }
+  .cta h2 span { color: #8db28f; }
+
+  /* ── Footer ── */
+  footer {
+    background: var(--green-deep);
+    padding: 40px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  footer .logo img { height: 48px; width: 48px; }
+  footer .logo .thai { font-size: 26px; }
+
+  @media (max-width: 900px) {
+    header { padding: 12px 24px; flex-wrap: wrap; gap: 12px; }
+    nav { gap: 18px; }
+    .hero { padding: 48px 24px; }
+    section { padding: 64px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <img src="logo.png" alt="โลโก้ ถลำ">
+    <span>
+      <span class="thai">ถลำ</span>
+      <span class="en">THALAM</span>
+    </span>
+  </a>
+  <nav>
+    <a href="#vibe">บรรยากาศ</a>
+    <a href="#booking">จองโต๊ะ</a>
+    <a href="#menu">เมนู</a>
+    <a href="#location">ที่ตั้ง</a>
+  </nav>
+  <a class="btn" href="#booking">จองโต๊ะ</a>
+</header>
+
+<section class="hero">
+  <div class="hero-copy">
+    <div class="kicker">อาหาร <span class="star">✳</span> เครื่องดื่ม <span class="star">✳</span> ดนตรีสด</div>
+    <h1 class="display">ค่ำคืนนี้<br>ปล่อยตัว<br><em>ถลำ</em></h1>
+    <p class="lede">ร้านนั่งชิลใจกลางนางรอง อาหารถึงรส เครื่องดื่มถึงใจ ดนตรีสดทุกค่ำคืน — THALAM · ON ROUTE 2073</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#booking">จองโต๊ะเลย</a>
+      <a class="btn primary ghost" href="#menu">ดูเมนู</a>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="strip-inner">
+    ถลำ ✳ THALAM ✳ ON ROUTE 2073 ✳ อาหาร ✳ เครื่องดื่ม ✳ ดนตรีสดทุกคืน ✳
+    ถลำ ✳ THALAM ✳ ON ROUTE 2073 ✳ อาหาร ✳ เครื่องดื่ม ✳ ดนตรีสดทุกคืน ✳
+  </div>
+</div>
+
+<section id="vibe">
+  <div class="section-head">
+    <div class="kicker">บรรยากาศร้าน</div>
+    <h2 class="display">คืนไหนก็มีเรื่องให้ถลำ</h2>
+  </div>
+  <div class="gallery">
+    <figure>
+      <img src="gallery-band.jpg" alt="วงดนตรีเล่นสดในร้าน">
+      <figcaption>ดนตรีสดทุกค่ำคืน</figcaption>
+    </figure>
+    <figure>
+      <img src="gallery-crowd.jpg" alt="บรรยากาศลูกค้าในร้าน">
+      <figcaption>นั่งชิลได้ทั้งในร้านและหน้าร้าน</figcaption>
+    </figure>
+    <figure>
+      <img src="gallery-mic.jpg" alt="ไมโครโฟนบนเวที">
+      <figcaption>เวทีพร้อม ไลน์อัพแน่นทุกสัปดาห์</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="zones" id="booking">
+  <div class="section-head">
+    <div class="kicker">จองโต๊ะถลำ</div>
+    <h2 class="display">เลือกโซนที่ใช่</h2>
+  </div>
+  <div class="zone-grid">
+    <div class="zone">
+      <h3 class="display">Zone A</h3>
+      <div class="tag">ด้านในร้าน · A1–A10</div>
+      <p>โต๊ะด้านในร้าน ใกล้เวทีนักดนตรี เห็นวงชัดทุกที่นั่ง รองรับ 2–7 ท่านต่อโต๊ะ</p>
+    </div>
+    <div class="zone">
+      <h3 class="display">Zone B</h3>
+      <div class="tag">โต๊ะแคมป์ห้องแอร์ · B1–B5</div>
+      <p>โซนห้องแอร์เย็นฉ่ำ นั่งสบายสไตล์แคมป์ รองรับโต๊ะละ 4 ท่าน</p>
+    </div>
+    <div class="zone">
+      <h3 class="display">Zone C</h3>
+      <div class="tag">โต๊ะแคมป์หน้าร้าน · C1–C4</div>
+      <p>โซนหน้าร้านรับลมเย็น ๆ บรรยากาศเปิดโล่ง รองรับโต๊ะละ 4 ท่าน</p>
+    </div>
+  </div>
+  <div class="cta-row">
+    <a class="btn primary" href="#contact">ทักมาจองโต๊ะ</a>
+  </div>
+</section>
+
+<section id="menu">
+  <div class="section-head">
+    <div class="kicker">ของกินของดื่ม</div>
+    <h2 class="display">ถึงรสทุกจาน ถึงใจทุกแก้ว</h2>
+  </div>
+  <div class="menu-grid">
+    <div class="card">
+      <div class="thumb">🍳</div>
+      <div class="body">
+        <h3 class="display">กับแกล้มจานเด็ด</h3>
+        <p>เมนูกับแกล้มรสจัดถึงเครื่อง กินคู่กับเครื่องดื่มเย็น ๆ เข้ากันสุด</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="thumb">🍲</div>
+      <div class="body">
+        <h3 class="display">อาหารจานหลัก</h3>
+        <p>ข้าวต้ม กับข้าว และเมนูอิ่มท้อง ทำสดใหม่จากครัวทุกจาน</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="thumb">🍹</div>
+      <div class="body">
+        <h3 class="display">เครื่องดื่ม & มิกเซอร์</h3>
+        <p>เครื่องดื่มครบทุกสาย พร้อมโปรบุฟเฟ่ต์มิกเซอร์สุดคุ้มประจำร้าน</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="thumb">⭐</div>
+      <div class="body">
+        <h3 class="display">สะสมแต้ม</h3>
+        <p>กินถลำยิ่งมายิ่งคุ้ม ครบ 500.- รับ 1 แต้มทันที สะสมแลกของรางวัล</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="location">
+  <div class="section-head">
+    <div class="kicker">มาหาเราได้ที่</div>
+    <h2 class="display">ที่ตั้ง &amp; เวลาเปิด</h2>
+  </div>
+  <div class="loc-grid">
+    <div class="loc">
+      <h3 class="display">ที่ตั้งร้าน</h3>
+      <p>อ.นางรอง จ.บุรีรัมย์<br>ตรงสี่แยกใกล้โลตัส–เซเว่น เส้นนางรอง-ชำนิ<br><a href="#">เปิดใน Google Maps</a></p>
+    </div>
+    <div class="loc">
+      <h3 class="display">เวลาเปิด &amp; ติดต่อ</h3>
+      <p>เปิดทุกเย็น (ใส่เวลาจริงตรงนี้)<br>โทร 08x-xxx-xxxx<br><a href="#">Facebook / LINE ของร้าน</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="contact">
+  <h2 class="display">คืนนี้... <span>ถลำ</span> กันมั้ย</h2>
+  <a class="btn primary" href="#">จองโต๊ะผ่าน LINE</a>
+</section>
+
+<footer>
+  <a class="logo" href="#">
+    <img src="logo.png" alt="โลโก้ ถลำ">
+    <span>
+      <span class="thai">ถลำ</span>
+      <span class="en">THALAM</span>
+    </span>
+  </a>
+  <div>© 2026 ถลำ THALAM · ON ROUTE 2073 — Since 30 August 2024</div>
+</footer>
+
+</body>
+</html>

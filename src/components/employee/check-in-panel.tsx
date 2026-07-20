@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { checkInAction, checkOutAction, type ActionResult } from '@/actions/attendance'
 import { collectDeviceSignals, computeFingerprint } from '@/lib/device-fingerprint'
 import { SelfieCapture } from '@/components/employee/selfie-capture'
@@ -72,6 +72,27 @@ export function CheckInPanel({
       : shifts[0]?.id ?? ''
   )
 
+  // เลือก "กะของวันไหน" — ช่วงค่ำ (>=18:00) เข้าก่อนเวลาให้เลือกกะของพรุ่งนี้ได้
+  // (กันเคสกะเที่ยงคืนของวันที่ 20 เข้ามา 23:45 แล้วโดนนับสายของวันที่ 19)
+  const [dayChoice, setDayChoice] = useState<'today' | 'tomorrow'>('today')
+  const [isEvening, setIsEvening] = useState(false)
+  const [dates, setDates] = useState<{ today: string; tomorrow: string }>({ today: '', tomorrow: '' })
+  useEffect(() => {
+    const now = new Date()
+    const evening = now.getHours() >= 18
+    setIsEvening(evening)
+    const fmt = (d: Date) => d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+    const tmr = new Date(now.getTime() + 86_400_000)
+    setDates({ today: fmt(now), tomorrow: fmt(tmr) })
+    // default ฉลาด: ช่วงค่ำ + กะที่เลือกเริ่มช่วง 00:00–05:59 → น่าจะเป็นกะของพรุ่งนี้
+    if (evening) {
+      const sel = shifts.find((s) => s.id === (defaultShiftId ?? shifts[0]?.id))
+      const startHour = sel ? Number(sel.start_time.slice(0, 2)) : NaN
+      if (!Number.isNaN(startHour) && startHour < 6) setDayChoice('tomorrow')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function handleCheckIn() {
     if (selfieRequired && !selfiePath) {
       setResult({ ok: false, error: 'กรุณาถ่ายรูปยืนยันตัวตนก่อน' })
@@ -94,6 +115,7 @@ export function CheckInPanel({
         workPlan,
         selfiePath: selfiePath ?? undefined,
         shiftId: shiftId || null,
+        workDateChoice: dayChoice,
       })
       setResult(res)
       setBusy(false)
@@ -145,6 +167,38 @@ export function CheckInPanel({
             <div className="rounded-lg border p-3">
               <p className="mb-2 text-sm font-medium">ถ่ายรูปยืนยันตัวตน (บังคับ)</p>
               <SelfieCapture userId={userId} purpose="checkin" onCaptured={setSelfiePath} />
+            </div>
+          )}
+          {isEvening && (
+            <div>
+              <label className="block text-sm font-medium">เข้ากะของวันไหน</label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDayChoice('today')}
+                  className={`rounded-lg border p-3 text-sm transition ${
+                    dayChoice === 'today'
+                      ? 'border-brand-600 bg-brand-50 font-medium text-brand-700 dark:bg-brand-600/15 dark:text-brand-500'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  วันนี้ ({dates.today})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDayChoice('tomorrow')}
+                  className={`rounded-lg border p-3 text-sm transition ${
+                    dayChoice === 'tomorrow'
+                      ? 'border-brand-600 bg-brand-50 font-medium text-brand-700 dark:bg-brand-600/15 dark:text-brand-500'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  พรุ่งนี้ ({dates.tomorrow})
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                เข้ากะเที่ยงคืน/เช้ามืดของวันพรุ่งนี้ก่อนเวลา ให้เลือก &quot;พรุ่งนี้&quot; — ระบบจะคิดเวลาสายจากกะของวันนั้น
+              </p>
             </div>
           )}
           {shifts.length > 0 && (

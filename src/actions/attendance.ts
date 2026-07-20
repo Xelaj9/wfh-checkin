@@ -10,7 +10,7 @@ import { getClientIp, writeAudit } from '@/lib/audit'
 import { checkGeofence } from '@/lib/location'
 import { computeRisk, riskToStatus, toLevel } from '@/lib/risk-scoring'
 import { isDeviceClaimInconsistent, osFromUA } from '@/lib/ua'
-import { isTimezoneMismatch } from '@/lib/tz'
+import { isTimezoneMismatch, shiftStartUtcMs, addDays } from '@/lib/tz'
 import { workDateInTz } from '@/lib/utils'
 import { getSettings } from '@/lib/settings'
 
@@ -35,6 +35,7 @@ const checkInSchema = z.object({
   workPlan: z.string().max(2000).optional(),
   selfiePath: z.string().optional(),
   shiftId: z.string().uuid().nullable().optional(), // กะที่พนักงานเลือกวันนี้
+  workDateChoice: z.enum(['today', 'tomorrow']).optional(), // กะของวันไหน (เข้าก่อนเที่ยงคืน = พรุ่งนี้)
 })
 
 const checkOutSchema = z.object({
@@ -125,7 +126,18 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
     .eq('id', user.team_id ?? '')
     .maybeSingle()
   const tz = team?.timezone ?? DEFAULT_TZ
-  const workDate = workDateInTz(tz)
+  let workDate = workDateInTz(tz)
+
+  // เข้าก่อนเที่ยงคืนสำหรับกะของ "พรุ่งนี้" (เช่น กะ 00:00 เข้ามา 23:45)
+  // อนุญาตเฉพาะช่วงค่ำ (>= 18:00 ตามโซนบริษัท) กันเลือกวันมั่ว
+  if (data.workDateChoice === 'tomorrow') {
+    const hhmm = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date())
+    const nowMin = Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
+    if (nowMin < 18 * 60) {
+      return { ok: false, error: 'เลือกกะของวันพรุ่งนี้ได้เฉพาะช่วงค่ำ (หลัง 18:00)' }
+    }
+    workDate = addDays(workDate, 1)
+  }
 
   // กะที่พนักงานเลือกตอนเช็คอินวันนี้ (รองรับวนกะ) — fallback ไปกะประจำตัว
   const chosenShiftId = data.shiftId ?? user.shift_id ?? null
@@ -216,7 +228,9 @@ export async function checkInAction(input: unknown): Promise<ActionResult> {
 
   // มาสาย?
   const now = new Date()
-  const isLate = computeIsLate(now, tz, startTime, graceMin)
+  // สาย = เลยเวลาเริ่มกะของ "วันที่เลือก" + ผ่อนผัน (คิดข้ามเที่ยงคืนถูกต้อง)
+  const startMs = shiftStartUtcMs(workDate, startTime, tz)
+  const isLate = startMs != null ? now.getTime() > startMs + graceMin * 60_000 : false
 
   // IP ของ request (server-side — ปลอมจาก client ไม่ได้)
   const ip = getClientIp()
