@@ -10,3 +10,5 @@ supabase/.branches
 supabase/.temp
 .DS_Store
 .env*
+jack-portfolio/
+thalam-landing/
