@@ -3,8 +3,22 @@ import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { workDateInTz } from '@/lib/utils'
 import { DatePickerNav } from '@/components/admin/date-picker-nav'
+import {
+  AttendanceTrendChart,
+  AvgCheckInChart,
+  EmployeeHoursChart,
+  StatusBreakdownBar,
+  type DailyPoint,
+  type EmployeeHours,
+} from '@/components/admin/dashboard-charts'
 
 const DEFAULT_TZ = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE ?? 'Asia/Bangkok'
+
+/** นาทีของวัน (ตามโซนบริษัท) จาก ISO timestamp */
+function minutesOfDay(iso: string): number {
+  const s = new Intl.DateTimeFormat('en-GB', { timeZone: DEFAULT_TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
+  return Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5))
+}
 
 function StatCard({ label, value, tone }: { label: string; value: number; tone?: string }) {
   return (
@@ -36,11 +50,24 @@ export default async function AdminDashboard({
   const workDate = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : today
   const isToday = workDate === today
 
+  // ข้อมูล 30 วันย้อนหลังจากวันที่เลือก (ใช้ทั้งการ์ดสรุปวันเดียว + กราฟแนวโน้ม)
   // RLS จำกัดขอบเขตทีมให้อัตโนมัติ (admin เห็นเฉพาะทีมตัวเอง / super_admin เห็นหมด)
-  const { data: dayRecords } = await supabase
-    .from('attendance_records')
-    .select('id, user_id, status, check_in_time, check_out_time, is_late')
-    .eq('work_date', workDate)
+  const fromDate = shiftDate(workDate, -29)
+  const [{ data: rangeRecords }, { data: members }] = await Promise.all([
+    supabase
+      .from('attendance_records')
+      .select('id, user_id, work_date, status, check_in_time, check_out_time, is_late, worked_minutes')
+      .gte('work_date', fromDate)
+      .lte('work_date', workDate)
+      .order('check_in_time', { ascending: true }),
+    supabase
+      .from('users')
+      .select('id, full_name, email')
+      .in('role', ['employee', 'admin'])
+      .eq('is_active', true),
+  ])
+  const all = rangeRecords ?? []
+  const dayRecords = all.filter((r) => r.work_date === workDate)
 
   // นับเป็น "คน" (ไม่ซ้ำ) — รองรับเช็คอินหลายรอบ/วัน
   const recs = dayRecords ?? []
@@ -53,14 +80,51 @@ export default async function AdminDashboard({
   const suspicious = uniq(recs.filter((r) => r.status === 'suspicious').map((r) => r.user_id))
   const pending = recs.filter((r) => r.status === 'pending_review').length
 
-  // นับพนักงานทั้งหมด (count อยู่ใน response header → ใช้ select count)
-  const { count: employeeCount } = await supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .in('role', ['employee', 'admin'])
-    .eq('is_active', true)
+  const employeeCount = (members ?? []).length
+  const notCheckedIn = employeeCount - checkedIn
 
-  const notCheckedIn = (employeeCount ?? 0) - checkedIn
+  // ---------- ข้อมูลกราฟ (ช่วง 30 วันถึงวันที่เลือก) ----------
+  // รายวัน: คนตรงเวลา/สาย (นับคนไม่ซ้ำ) + เวลาเข้าเฉลี่ย (รอบแรกของแต่ละคน)
+  const daily: DailyPoint[] = []
+  for (let i = 0; i < 30; i++) {
+    const date = shiftDate(fromDate, i)
+    const dayRecs = all.filter((r) => r.work_date === date && r.check_in_time)
+    const lateUsers = new Set(dayRecs.filter((r) => r.is_late).map((r) => r.user_id))
+    const allUsers = new Set(dayRecs.map((r) => r.user_id))
+    const firstIns = new Map<string, number>()
+    for (const r of dayRecs) {
+      if (!firstIns.has(r.user_id)) firstIns.set(r.user_id, minutesOfDay(r.check_in_time!))
+    }
+    const ins = [...firstIns.values()]
+    daily.push({
+      date,
+      onTime: allUsers.size - lateUsers.size,
+      late: lateUsers.size,
+      avgInMin: ins.length ? ins.reduce((a, b) => a + b, 0) / ins.length : null,
+    })
+  }
+
+  // ต่อพนักงาน: ชั่วโมงรวม + จำนวนวันสาย (top 10)
+  const nameOf = new Map((members ?? []).map((m) => [m.id, m.full_name ?? m.email]))
+  const perEmp = new Map<string, { minutes: number; lateDates: Set<string> }>()
+  for (const r of all) {
+    const e = perEmp.get(r.user_id) ?? { minutes: 0, lateDates: new Set<string>() }
+    e.minutes += r.worked_minutes ?? 0
+    if (r.is_late) e.lateDates.add(r.work_date)
+    perEmp.set(r.user_id, e)
+  }
+  const hoursRows: EmployeeHours[] = [...perEmp.entries()]
+    .map(([id, e]) => ({ name: nameOf.get(id) ?? '—', minutes: e.minutes, lateDays: e.lateDates.size }))
+    .filter((e) => e.minutes > 0)
+    .sort((a, b) => b.minutes - a.minutes)
+    .slice(0, 10)
+
+  // สัดส่วนสถานะรวมทั้งช่วง
+  const statusCounts = {
+    normal: all.filter((r) => r.status === 'normal').length,
+    pending: all.filter((r) => r.status === 'pending_review').length,
+    suspicious: all.filter((r) => r.status === 'suspicious').length,
+  }
 
   return (
     <div className="space-y-6">
@@ -117,6 +181,40 @@ export default async function AdminDashboard({
           </Link>
         </div>
       )}
+
+      {/* ---------- กราฟสถิติ 30 วันล่าสุด (ถึงวันที่เลือก) ---------- */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4">
+          <h2 className="mb-1 font-semibold">คนมาทำงานต่อวัน</h2>
+          <p className="mb-3 text-xs text-slate-400">
+            30 วันถึง {workDate} · ชี้ที่แท่งเพื่อดูตัวเลข
+          </p>
+          <AttendanceTrendChart daily={daily} />
+        </section>
+
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4">
+          <h2 className="mb-1 font-semibold">เวลาเข้างานเฉลี่ยต่อวัน</h2>
+          <p className="mb-3 text-xs text-slate-400">เฉลี่ยจากรอบแรกของแต่ละคน (ยิ่งต่ำ = เข้าเช้ากว่า)</p>
+          <AvgCheckInChart daily={daily} />
+        </section>
+
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4">
+          <h2 className="mb-1 font-semibold">ชั่วโมงทำงานรวมต่อพนักงาน</h2>
+          <p className="mb-3 text-xs text-slate-400">
+            30 วันล่าสุด (สูงสุด 10 อันดับ) ·{' '}
+            <Link href="/admin/stats" className="underline">
+              ดูตารางสถิติเต็มรายเดือน
+            </Link>
+          </p>
+          <EmployeeHoursChart rows={hoursRows} />
+        </section>
+
+        <section className="rounded-xl border bg-white dark:bg-slate-900 p-4">
+          <h2 className="mb-1 font-semibold">สัดส่วนสถานะการเช็คอิน</h2>
+          <p className="mb-3 text-xs text-slate-400">ทุกรอบเช็คอินในช่วง 30 วัน</p>
+          <StatusBreakdownBar counts={statusCounts} />
+        </section>
+      </div>
 
       <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 text-sm text-slate-500">
         ไปที่เมนู{' '}
