@@ -38,10 +38,11 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
 
       <main className="flex-1 px-4 py-5">{children}</main>
 
-      <nav className="sticky bottom-0 grid grid-cols-3 border-t border-slate-200/70 bg-white/90 text-center text-xs backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+      <nav className="sticky bottom-0 grid grid-cols-4 border-t border-slate-200/70 bg-white/90 text-center text-xs backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <NavItem href="/app" label="หน้าหลัก" icon="M3 9.5 12 3l9 6.5V21H3z" />
         <NavItem href="/app/history" label="ประวัติ" icon="M12 8v5l3 2M21 12a9 9 0 1 1-9-9" />
         <NavItem href="/app/adjustment" label="แก้เวลา" icon="M12 8v5l3 2M21 12a9 9 0 1 1-9-9 M16 3l5 5" />
+        <NavItem href="/app/leave" label="วันลา" icon="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2zM9 15l2 2 4-4" />
       </nav>
     </div>
   )

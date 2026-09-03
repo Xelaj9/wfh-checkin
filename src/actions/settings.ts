@@ -14,6 +14,9 @@ const settingsSchema = z.object({
   presence_response_minutes: z.number().int().min(3).max(60),
   default_geofence_radius: z.number().int().min(50).max(2000),
   max_checkins_per_day: z.number().int().min(1).max(10),
+  min_leave_advance_days: z.number().int().min(0).max(60),
+  max_leaves_per_month: z.number().int().min(0).max(31),
+  max_concurrent_leaves: z.number().int().min(1).max(100),
   data_retention_days: z.number().int().min(30).max(3650),
 })
 

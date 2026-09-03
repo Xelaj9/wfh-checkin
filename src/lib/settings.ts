@@ -8,6 +8,9 @@ export interface AppSettings {
   presence_response_minutes: number
   default_geofence_radius: number
   max_checkins_per_day: number
+  min_leave_advance_days: number
+  max_leaves_per_month: number
+  max_concurrent_leaves: number
   data_retention_days: number
 }
 
@@ -18,6 +21,9 @@ const DEFAULTS: AppSettings = {
   presence_response_minutes: 10,
   default_geofence_radius: 200,
   max_checkins_per_day: 1,
+  min_leave_advance_days: 3,
+  max_leaves_per_month: 4,
+  max_concurrent_leaves: 2,
   data_retention_days: 365,
 }
 

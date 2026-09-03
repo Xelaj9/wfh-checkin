@@ -14,6 +14,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/admin/attendance', label: 'การเข้างาน', icon: 'M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z' },
   { href: '/admin/suspicious', label: 'ผิดปกติ', icon: 'M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z' },
   { href: '/admin/devices', label: 'อุปกรณ์', icon: 'M5 4h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8 20h8' },
+  { href: '/admin/leaves', label: 'วันลา', icon: 'M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2zM9 15l2 2 4-4' },
   { href: '/admin/adjustments', label: 'คำขอแก้เวลา', icon: 'M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
   { href: '/admin/reports', label: 'รายงาน', icon: 'M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z' },
   { href: '/admin/stats', label: 'สถิติ', icon: 'M3 3v18h18M7 14l3-3 3 3 5-5' },

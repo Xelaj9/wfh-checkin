@@ -64,6 +64,27 @@ export function SettingsForm({ initial }: { initial: AppSettings }) {
         onChange={(v) => setS({ ...s, max_checkins_per_day: v })}
       />
       <NumberField
+        label="ยื่นลาล่วงหน้าอย่างน้อย (วัน, 0–60)"
+        value={s.min_leave_advance_days}
+        min={0}
+        max={60}
+        onChange={(v) => setS({ ...s, min_leave_advance_days: v })}
+      />
+      <NumberField
+        label="ลาได้สูงสุดต่อเดือน (ครั้ง, 0–31)"
+        value={s.max_leaves_per_month}
+        min={0}
+        max={31}
+        onChange={(v) => setS({ ...s, max_leaves_per_month: v })}
+      />
+      <NumberField
+        label="อนุมัติลาวันเดียวกันได้สูงสุด (คน, 1–100)"
+        value={s.max_concurrent_leaves}
+        min={1}
+        max={100}
+        onChange={(v) => setS({ ...s, max_concurrent_leaves: v })}
+      />
+      <NumberField
         label="ระยะเวลาเก็บข้อมูล (วัน, 30–3650)"
         value={s.data_retention_days}
         min={30}

@@ -40,6 +40,15 @@ export default async function AttendancePage({
     .eq('work_date', date)
     .order('check_in_time', { ascending: true })
 
+  // วันลาที่อนุมัติแล้วของวันนั้น — แสดง "ลา" แทน "ยังไม่เข้างาน"
+  const { data: approvedLeaves } = await supabase
+    .from('leave_requests')
+    .select('user_id')
+    .eq('leave_date', date)
+    .eq('status', 'approved')
+    .is('deleted_at', null)
+  const onLeave = new Set((approvedLeaves ?? []).map((l) => l.user_id))
+
   // รวมหลายรอบ/วันของแต่ละคนเป็นสรุปเดียว (เข้าครั้งแรก–ออกล่าสุด, ชม.รวม, สถานะแย่สุด)
   interface Agg {
     rounds: number
@@ -81,12 +90,12 @@ export default async function AttendancePage({
   // รวมพนักงาน + สรุปของวันนั้น (รวม "ยังไม่เข้างาน")
   let rows = (employees ?? []).map((e) => ({ employee: e, record: byUser.get(e.id) ?? null }))
 
-  rows = rows.filter(({ record }) => {
+  rows = rows.filter(({ employee, record }) => {
     switch (filter) {
       case 'late':
         return record?.isLate
       case 'not_checked_in':
-        return !record?.firstIn
+        return !record?.firstIn && !onLeave.has(employee.id)
       case 'suspicious':
         return record?.status === 'suspicious'
       case 'pending_review':
@@ -170,7 +179,13 @@ export default async function AttendancePage({
                 <td className="px-4 py-2">{formatMinutes(record?.totalMin ? record.totalMin : null)}</td>
                 <td className="px-4 py-2">{record ? record.maxRisk : '-'}</td>
                 <td className="px-4 py-2">
-                  {record ? <StatusBadge status={record.status} /> : <span className="text-xs text-slate-400">ยังไม่เข้างาน</span>}
+                  {record ? (
+                    <StatusBadge status={record.status} />
+                  ) : onLeave.has(employee.id) ? (
+                    <span className="badge bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">ลา (อนุมัติ)</span>
+                  ) : (
+                    <span className="text-xs text-slate-400">ยังไม่เข้างาน</span>
+                  )}
                 </td>
               </tr>
             ))}

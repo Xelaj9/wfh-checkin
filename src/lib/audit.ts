@@ -19,6 +19,10 @@ export type AuditAction =
   | 'presence_acknowledged'
   | 'presence_missed'
   | 'auto_checkout'
+  | 'leave_requested'
+  | 'leave_approved'
+  | 'leave_rejected'
+  | 'leave_cancelled'
   | 'report_exported'
 
 interface WriteAuditArgs {

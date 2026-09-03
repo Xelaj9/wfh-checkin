@@ -177,6 +177,18 @@ export type AdjustmentRequest = Timestamps & {
   deleted_at: string | null
 }
 
+export type LeaveRequest = Timestamps & {
+  id: string
+  user_id: string
+  leave_date: string
+  reason: string | null
+  status: AdjustmentStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
+  admin_note: string | null
+  deleted_at: string | null
+}
+
 export type AuditLog = {
   id: number
   actor_id: string | null
@@ -232,6 +244,7 @@ export type Database = {
       presence_checks: TableShape<PresenceCheck>
       work_logs: TableShape<WorkLog>
       adjustment_requests: TableShape<AdjustmentRequest>
+      leave_requests: TableShape<LeaveRequest>
       audit_logs: TableShape<AuditLog>
       login_history: TableShape<{
         id: number
